@@ -1,0 +1,10 @@
+flet==0.28.3
+python-dotenv
+pg8000>=1.30.0
+openai>=1.0.0
+packaging
+scramp
+requests
+python-dateutil
+pypdf
+python-docx
