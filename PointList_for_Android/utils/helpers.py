@@ -11,31 +11,6 @@ import binascii
 import threading
 from datetime import date, datetime, timedelta
 
-def get_logo_path() -> str:
-    """Busca y devuelve la ruta absoluta o relativa existente del archivo logo.png."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    candidates = [
-        os.path.join(base_dir, "assets", "logo.png"),
-        os.path.join(os.getcwd(), "assets", "logo.png"),
-        os.path.join(os.getcwd(), "PointListv14_For_PC", "assets", "logo.png"),
-        os.path.join(base_dir, "assets", "figma_assets", "logo.png"),
-        os.path.join("assets", "logo.png"),
-    ]
-    for c in candidates:
-        if os.path.isfile(c):
-            return c
-    return "assets/logo.png"
-
-def get_logo_control(width: int = 28, height: int = 28):
-    """Crea un control ft.Image con la imagen oficial del logo PointList."""
-    import flet as ft
-    return ft.Image(
-        src=get_logo_path(),
-        width=width,
-        height=height,
-        fit=ft.ImageFit.CONTAIN
-    )
-
 # ─────────────────────────────────────────────
 # CONSTANTES GLOBALES DE TEMA / COLORES
 # ─────────────────────────────────────────────

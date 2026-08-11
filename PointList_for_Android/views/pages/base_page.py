@@ -1,10 +1,9 @@
 """
 pages/base_page.py
-PointList v0.14.25experiment
-Clase base para todas las páginas de la aplicación con diseño premium v0.13.
+PointList v13 Mobile Responsive
+Clase base para todas las páginas de la aplicación con diseño adaptativo para Android/móvil.
 """
 
-import os
 import flet as ft
 from utils.flet_compat import run_async_safe
 from utils.i18n import I18n, t
@@ -13,7 +12,7 @@ from utils.i18n import I18n, t
 class BasePage:
     """
     Clase base que todas las páginas deben heredar.
-    Provee acceso a la página de Flet y un método build() abstracto.
+    Provee acceso a la página de Flet, utilidades responsive y métodos comunes.
     """
 
     def __init__(self, page: ft.Page = None):
@@ -35,17 +34,9 @@ class BasePage:
         """Construye y devuelve el control principal de la página."""
         raise NotImplementedError("Cada página debe implementar el método build().")
 
-    def is_mobile(self) -> bool:
-        """Devuelve True si la ventana de la app tiene un ancho de pantalla móvil (< 768px)."""
-        if not self.page or not self.page.width:
-            return False
-        return self.page.width < 768
-
     def _get_theme_colors(self):
-        """Devuelve los colores adecuados según el modo de tema actual.
-        Optimizado para modo oscuro: sin colores blancos residuales.
-        """
-        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
+        """Devuelve los colores adecuados según el modo de tema actual."""
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK if self.page else False
         return {
             "primary": self.primary_color if not is_dark else "#818CF8",
             "background": "#F9FAFB" if not is_dark else "#0F172A",
@@ -60,6 +51,21 @@ class BasePage:
             "stat_num": "#0F172A" if not is_dark else "#F8FAFC",
         }
 
+    def is_mobile(self) -> bool:
+        """Determina si la pantalla actual corresponde a un dispositivo móvil (< 768px)."""
+        if not self.page:
+            return True
+        win_w = getattr(self.page.window, "width", None) if hasattr(self.page, "window") else None
+        if win_w and win_w > 0 and win_w < 768:
+            return True
+        w = self.page.width
+        if w and w > 0 and w < 768:
+            return True
+        if w is None or w == 0:
+            return True
+        return False
+
+
     def set_language(self, lang: str):
         """Cambia el idioma de la aplicación."""
         if I18n.set_language(lang):
@@ -70,86 +76,138 @@ class BasePage:
                 self.page.client_storage.set("language", lang)
             return True
         return False
-    
+
     def translate(self, key: str) -> str:
         """Traduce una clave usando el idioma actual."""
         return t(key, self.language)
 
-    def _build_navbar(self, title: str, show_user: bool = True) -> ft.Container:
-        """
-        Construye la barra de navegación superior responsiva premium v0.13.
-        """
+    def _build_bottom_nav(self, current_view: str = "Inicio") -> ft.Control:
+        """Construye la barra de navegación inferior para pantallas móviles."""
         from services.navigation_service import NavigationController
         colors = self._get_theme_colors()
-        # Umbral para ocultar botones centrales (móvil/tablet)
-        # Aumentamos el umbral a 950px para asegurar que se oculten antes de amontonarse
-        is_mobile = self.page.width < 800
 
-        # Obtener usuario de forma segura (evita Timeout en hilos secundarios)
+        view_indices = {
+            "Inicio": 0,
+            "Notas": 1,
+            "Calendario": 2,
+            "Tecnicas": 3,
+            "ChatBot": 4,
+        }
+        index_views = ["Inicio", "Notas", "Calendario", "Tecnicas", "ChatBot"]
+        selected_idx = view_indices.get(current_view, 0)
+
+        def on_change(e):
+            idx = e.control.selected_index
+            if 0 <= idx < len(index_views):
+                target = index_views[idx]
+                NavigationController.update_view(target)
+
+        return ft.NavigationBar(
+            selected_index=selected_idx,
+            bgcolor=colors["surface"],
+            destinations=[
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.HOME_OUTLINED,
+                    selected_icon=ft.Icons.HOME,
+                    label=self.translate("nav_home"),
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.BAR_CHART_OUTLINED,
+                    selected_icon=ft.Icons.BAR_CHART,
+                    label=self.translate("nav_notes"),
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.CALENDAR_MONTH_OUTLINED,
+                    selected_icon=ft.Icons.CALENDAR_MONTH,
+                    label=self.translate("nav_calendar"),
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.LIGHTBULB_OUTLINE,
+                    selected_icon=ft.Icons.LIGHTBULB,
+                    label=self.translate("nav_techniques"),
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.SMART_TOY_OUTLINED,
+                    selected_icon=ft.Icons.SMART_TOY,
+                    label=self.translate("nav_chatbot"),
+                ),
+            ],
+            on_change=on_change,
+        )
+
+    def _build_navbar(self, title: str, show_user: bool = True) -> ft.Container:
+        """Construye la barra de navegación superior responsiva."""
+        from services.navigation_service import NavigationController
+        colors = self._get_theme_colors()
+        is_mob = self.is_mobile()
+
         current_user = NavigationController.get_current_user()
 
-        # Los botones centrales han sido eliminados para un diseño más limpio y minimalista.
-        nav_buttons = ft.Container()
-
         right_controls = []
+        # Conmutador de tema claro/oscuro
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK if self.page else False
+        right_controls.append(
+            ft.IconButton(
+                icon=ft.Icons.WB_SUNNY_OUTLINED if is_dark else ft.Icons.NIGHTLIGHT_ROUND,
+                icon_color=colors["primary"],
+                tooltip="Cambiar Tema",
+                on_click=lambda e: NavigationController.change_theme(not is_dark),
+            )
+        )
+
         if show_user:
-            # En móvil solo mostramos el avatar, en escritorio nombre + avatar
-            if not is_mobile:
-                right_controls.append(ft.Text(current_user.get("nombre_usuario", current_user.get("name", "")), color=colors["text_secondary"], size=14))
+            if not is_mob:
+                user_name = current_user.get("nombre_usuario", current_user.get("name", ""))
+                right_controls.append(ft.Text(user_name, color=colors["text_secondary"], size=14, weight="bold"))
                 right_controls.append(ft.Container(width=8))
-            
+
             photo_url = current_user.get("photo_url", "")
             right_controls.append(
                 ft.GestureDetector(
                     content=ft.CircleAvatar(
                         foreground_image_src=photo_url if photo_url else None,
-                        radius=18,
-                        bgcolor=ft.Colors.BLUE_200,
+                        radius=16 if is_mob else 18,
+                        bgcolor=ft.Colors.BLUE_400,
                         content=ft.Text(
                             (current_user.get("nombre_usuario", current_user.get("name", "U")))[:1].upper(),
                             color=ft.Colors.WHITE,
+                            size=12 if is_mob else 14,
                         ) if not photo_url else None,
                     ),
                     on_tap=lambda e: NavigationController.update_view("Perfil"),
                 )
             )
 
-        from utils.helpers import get_logo_control
-        logo_ctrl = get_logo_control(width=28, height=28)
-
-        return ft.Container(
-            height=70,
+        navbar_container = ft.Container(
+            height=56 if is_mob else 64,
             bgcolor=colors["navbar"],
-            padding=ft.padding.symmetric(horizontal=16 if is_mobile else 24),
-            shadow=ft.BoxShadow(
-                blur_radius=10,
-                spread_radius=-2,
-                color=ft.Colors.BLACK12,
-                offset=ft.Offset(0, 2),
-            ),
+            padding=ft.padding.symmetric(horizontal=12 if is_mob else 24),
+            border=ft.Border(bottom=ft.BorderSide(1, colors["divider"])),
             content=ft.Row(
                 controls=[
                     ft.Row([
                         self._build_popup_menu(),
-                        ft.Container(width=5 if is_mobile else 10),
-                        # Logo y nombre
-                        ft.Row([
-                            logo_ctrl,
-                            ft.Text("PointList", size=20 if is_mobile else 22, weight=ft.FontWeight.BOLD, 
-                                color=colors["text"], font_family="Poppins", visible=self.page.width > 450)
-                        ], spacing=8),
-                    ]),
-                    ft.Row(right_controls, spacing=0),
+                        ft.Container(width=4),
+                        ft.Image(src="assets/logo.png", width=24 if is_mob else 28, height=24 if is_mob else 28, fit=ft.ImageFit.CONTAIN),
+                        ft.Text(
+                            title if is_mob else "PointList",
+                            size=18 if is_mob else 20,
+                            weight=ft.FontWeight.BOLD,
+                            color=colors["text"],
+                        ),
+                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                    ft.Row(right_controls, vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
         )
 
+        return ft.SafeArea(navbar_container, top=True, bottom=False) if is_mob else navbar_container
+
     def _toggle_drawer(self, e):
         """Abre el panel lateral de navegación estilo Drawer."""
         from services.navigation_service import NavigationController
-        from utils.helpers import get_logo_control
         colors = self._get_theme_colors()
 
         def _nav(view_name):
@@ -160,8 +218,6 @@ class BasePage:
             except: pass
             NavigationController.update_view(view_name)
 
-        drawer_logo = get_logo_control(width=28, height=28)
-
         drawer = ft.NavigationDrawer(
             bgcolor=colors["surface"],
             controls=[
@@ -169,7 +225,7 @@ class BasePage:
                 ft.Container(
                     padding=ft.padding.symmetric(horizontal=20, vertical=10),
                     content=ft.Row([
-                        drawer_logo,
+                        ft.Image(src="assets/logo.png", width=28, height=28, fit=ft.ImageFit.CONTAIN),
                         ft.Text("PointList", size=22, weight="bold", color=colors["text"]),
                     ], spacing=10)
                 ),
@@ -186,11 +242,6 @@ class BasePage:
                             leading=ft.Icon(ft.Icons.BAR_CHART_OUTLINED, color=self.primary_color),
                             title=ft.Text(self.translate("nav_notes"), weight="bold", color=colors["text"]),
                             on_click=lambda _: _nav("Notas"),
-                        ),
-                        ft.ListTile(
-                            leading=ft.Icon(ft.Icons.ASSIGNMENT_OUTLINED, color=self.primary_color),
-                            title=ft.Text("Asignaciones", weight="bold", color=colors["text"]),
-                            on_click=lambda _: _nav("Asignaciones"),
                         ),
                         ft.ListTile(
                             leading=ft.Icon(ft.Icons.CALENDAR_MONTH_OUTLINED, color=self.primary_color),
@@ -233,7 +284,7 @@ class BasePage:
 
     def _build_popup_menu(self) -> ft.Control:
         """Construye el botón del menú hamburguesa."""
-        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK if self.page else False
 
         return ft.IconButton(
             icon=ft.Icons.MENU,
@@ -250,7 +301,7 @@ class BasePage:
                 bgcolor=color,
                 behavior=ft.SnackBarBehavior.FLOATING,
                 shape=ft.RoundedRectangleBorder(radius=10),
-                margin=ft.margin.all(20),
+                margin=ft.margin.all(16),
                 elevation=8,
                 open=True,
             )

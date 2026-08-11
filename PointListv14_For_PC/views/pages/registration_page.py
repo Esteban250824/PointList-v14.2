@@ -291,8 +291,8 @@ class RegistrationPage(BasePage):
                 ),
             ], width=content_width, height=240, clip_behavior=ft.ClipBehavior.HARD_EDGE)
 
-        logo_path = os.path.join("assets", "figma_assets", "logo.png")
-        logo_ctrl = ft.Image(src=logo_path, width=56, height=56, fit=ft.ImageFit.CONTAIN) if os.path.isfile(logo_path) else ft.Icon(ft.Icons.SCHOOL, size=42, color="#0AA174")
+        from utils.helpers import get_logo_control
+        logo_ctrl = get_logo_control(width=56, height=56)
 
         return ft.Container(
             width=panel_width,

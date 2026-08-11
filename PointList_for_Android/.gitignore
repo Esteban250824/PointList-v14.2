@@ -1,0 +1,46 @@
+# Environment Variables & Security Credentials (NUNCA SUBIR A GITHUB)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.jks
+*.keystore
+
+# Python Runtime & Package Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Build & Compilation Outputs
+build/
+dist/
+*.spec.bak
+*.apk
+*.aab
+*.exe
+*.dll
+
+# Flet / Flutter Temporary Files & Cache
+.flet/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+.cookiecutters/
+
+# IDE & Operating System Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

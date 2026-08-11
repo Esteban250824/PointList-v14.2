@@ -34,6 +34,75 @@ class MessagingPage(BasePage):
         self._right_panel_container = ft.Container(expand=True)
         self._file_picker = ft.FilePicker(on_result=self._on_file_selected)
         self.page.overlay.append(self._file_picker)
+        self._poller_started = False
+        self._start_realtime_poller()
+
+    def _start_realtime_poller(self):
+        """Inicia un hilo en segundo plano para sincronizar mensajes entrantes en tiempo real cada 1.5 segundos."""
+        if hasattr(self, "_poller_started") and self._poller_started:
+            return
+        self._poller_started = True
+
+        def _poll_loop():
+            import copy
+            last_counts = {}
+            while True:
+                time.sleep(1.5)
+                try:
+                    if not self.page or not self._uid:
+                        continue
+
+                    # 1. Mensajes del chat actualmente abierto
+                    if self._selected_contact:
+                        cid = self._selected_contact.get("id")
+                        if cid and (str(cid).isdigit() or isinstance(cid, int)):
+                            db_msgs = self._db.obtener_mensajes(self._uid, cid) or []
+                            from services.navigation_service import NavigationController
+                            if "messages" not in NavigationController.cache:
+                                NavigationController.cache["messages"] = {}
+
+                            old_msgs = NavigationController.cache["messages"].get(cid, [])
+                            if len(db_msgs) > len(old_msgs):
+                                NavigationController.cache["messages"][cid] = copy.deepcopy(db_msgs)
+                                last_msg = db_msgs[-1] if db_msgs else {}
+                                sender_id = last_msg.get("emisor_id") or last_msg.get("sender_id")
+                                if str(sender_id) != str(self._uid):
+                                    c_name = self._contact_display_name(self._selected_contact)
+                                    msg_txt = last_msg.get("contenido") or last_msg.get("content") or "Nuevo mensaje"
+                                    self._show_info(f"💬 {c_name}: {msg_txt}")
+                                self._refresh_messages()
+
+                    # 2. Mensajes entrantes de otros contactos
+                    for contact in list(self._contacts):
+                        cid = contact.get("id")
+                        if not cid or str(cid) == str(self._uid) or not (str(cid).isdigit() or isinstance(cid, int)):
+                            continue
+                        if self._selected_contact and str(self._selected_contact.get("id")) == str(cid):
+                            continue
+
+                        db_msgs = self._db.obtener_mensajes(self._uid, cid) or []
+                        if db_msgs:
+                            from services.navigation_service import NavigationController
+                            prev_cnt = last_counts.get(cid, len(NavigationController.cache.get("messages", {}).get(cid, [])))
+                            if len(db_msgs) > prev_cnt:
+                                last_counts[cid] = len(db_msgs)
+                                if "messages" not in NavigationController.cache:
+                                    NavigationController.cache["messages"] = {}
+                                NavigationController.cache["messages"][cid] = copy.deepcopy(db_msgs)
+
+                                last_msg = db_msgs[-1]
+                                sender_id = last_msg.get("emisor_id") or last_msg.get("sender_id")
+                                if str(sender_id) != str(self._uid):
+                                    contact["is_deleted"] = False
+                                    contact["is_archived"] = False
+                                    c_name = self._contact_display_name(contact)
+                                    msg_txt = last_msg.get("contenido") or last_msg.get("content") or "Nuevo mensaje"
+                                    self._show_info(f"💬 {c_name}: {msg_txt}")
+                                    self._search_contacts(None)
+                except Exception:
+                    pass
+
+        threading.Thread(target=_poll_loop, daemon=True).start()
 
     def _contact_display_name(self, contact: dict) -> str:
         if contact.get("is_group"):
@@ -371,6 +440,29 @@ class MessagingPage(BasePage):
         try: self.page.update()
         except: pass
 
+    def _clear_chat_history_action(self, contact):
+        """Vacía todo el historial de mensajes del chat seleccionado manteniendo la conversación abierta y limpia."""
+        if not contact:
+            return
+        cid = contact["id"]
+        from services.navigation_service import NavigationController
+        if "messages" not in NavigationController.cache:
+            NavigationController.cache["messages"] = {}
+        NavigationController.cache["messages"][cid] = []
+
+        if str(cid).isdigit() or isinstance(cid, int):
+            threading.Thread(
+                target=lambda: self._db.borrar_mensajes_contacto(self._uid, cid),
+                daemon=True
+            ).start()
+
+        if self._messages_ref.current:
+            self._messages_ref.current.controls.clear()
+            try: self._messages_ref.current.update()
+            except: pass
+
+        self._show_info(f"Historial del chat con {self._contact_display_name(contact)} vaciado.")
+
     def _archive_chat_action(self, contact):
         contact["is_archived"] = True
         if self._selected_contact and self._selected_contact["id"] == contact["id"]:
@@ -662,8 +754,13 @@ class MessagingPage(BasePage):
             tooltip="Opciones de chat",
             items=[
                 ft.PopupMenuItem(
+                    icon=ft.Icons.DELETE_SWEEP,
+                    text="Vaciar historial de mensajes",
+                    on_click=lambda e: self._clear_chat_history_action(self._selected_contact)
+                ),
+                ft.PopupMenuItem(
                     icon=ft.Icons.DELETE_OUTLINE,
-                    text="Borrar chat",
+                    text="Borrar chat de la lista",
                     on_click=lambda e: self._delete_chat_action(self._selected_contact)
                 ),
                 ft.PopupMenuItem(
@@ -693,8 +790,14 @@ class MessagingPage(BasePage):
                             ft.Text(contact_name, size=16, weight="bold", color=colors["text"]),
                             status_indicator,
                         ], expand=True, spacing=0),
+                        ft.IconButton(
+                            icon=ft.Icons.DELETE_SWEEP,
+                            icon_color="#D97706",
+                            tooltip="Vaciar historial del chat",
+                            on_click=lambda e: self._clear_chat_history_action(self._selected_contact)
+                        ),
                         options_popup,
-                    ], spacing=10),
+                    ], spacing=6),
                 ),
                 ft.Container(
                     expand=True,
@@ -755,7 +858,7 @@ class MessagingPage(BasePage):
         colors = self._get_theme_colors()
 
         menu_items = ft.Container(
-            width=170,
+            width=185,
             bgcolor=colors["surface"],
             border=ft.border.all(1, colors["border"]),
             border_radius=10,
@@ -768,8 +871,17 @@ class MessagingPage(BasePage):
             content=ft.Column([
                 ft.Container(
                     content=ft.Row([
+                        ft.Icon(ft.Icons.DELETE_SWEEP, color="#D97706", size=16),
+                        ft.Text("Vaciar historial", size=13, color="#D97706", weight="bold")
+                    ], spacing=10),
+                    padding=ft.padding.symmetric(horizontal=12, vertical=8),
+                    ink=True,
+                    on_click=lambda _: (_close_menu(), self._clear_chat_history_action(contact)),
+                ),
+                ft.Container(
+                    content=ft.Row([
                         ft.Icon(ft.Icons.DELETE_OUTLINE, color="#EF4444", size=16),
-                        ft.Text("Borrar chat", size=13, color="#EF4444", weight="bold")
+                        ft.Text("Borrar chat de lista", size=13, color="#EF4444", weight="bold")
                     ], spacing=10),
                     padding=ft.padding.symmetric(horizontal=12, vertical=8),
                     ink=True,

@@ -25,8 +25,8 @@ def main(page: ft.Page):
     NavigationController.initialize(page, main_container)
 
     # Logo centrado para la pantalla de carga
-    logo_path = os.path.join("assets", "logo.png")
-    brand_logo = ft.Image(src=logo_path, width=52, height=52, fit=ft.ImageFit.CONTAIN) if os.path.isfile(logo_path) else ft.Icon(ft.Icons.SCHOOL, size=48, color="#4F46E5")
+    from utils.helpers import get_logo_control
+    brand_logo = get_logo_control(width=52, height=52)
 
     loading_screen = ft.Container(
         content=ft.Column([
