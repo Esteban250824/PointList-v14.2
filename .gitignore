@@ -1,0 +1,21 @@
+# Git Ignore para Repositorio Principal PointList
+
+# Credenciales
+.env
+*.env
+
+# Binarios y comprimidos pesados
+build/
+dist/
+*.exe
+*.zip
+*.rar
+*.tar.gz
+
+# Cachés de Python e IDEs
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

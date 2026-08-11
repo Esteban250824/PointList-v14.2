@@ -18,8 +18,9 @@ if (Test-Path $flet_path) {
     Write-Host "Flet CLI detectado:" -ForegroundColor Green
     & $flet_path --version
     Write-Host ""
-    Write-Host "Iniciando compilacion de paquete APK (incluyendo .env y assets)..." -ForegroundColor Yellow
-    & $flet_path build apk ./ --icon assets/icon.png --project PointList --org com.pointlist.app --product "PointList" --build-version "1.0.0" --build-number 1 --template $template_path --no-rich-output --exclude .venv __pycache__ .git .idea .vscode
+    $env:GRADLE_OPTS = "-Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.jvmargs='-Xmx4096m -XX:+UseParallelGC'"
+    Write-Host "Iniciando compilacion ultra rapida de paquete APK..." -ForegroundColor Yellow
+    & $flet_path build apk ./ --icon assets/icon.png --project PointList --org com.pointlist.app --product "PointList" --build-version "1.0.0" --build-number 1 --template $template_path --no-rich-output --exclude .venv __pycache__ .git .idea .vscode build dist storage/temp assets/figma_assets *.log *.tmp
     
     if (Test-Path "build\apk\app-release.apk") {
         Write-Host ""

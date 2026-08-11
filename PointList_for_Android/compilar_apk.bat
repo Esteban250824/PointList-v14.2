@@ -13,12 +13,18 @@ if exist "%LOCALAPPDATA%\Programs\Git\cmd" set PATH=%LOCALAPPDATA%\Programs\Git\
 
 set TEMPLATE_PATH=%USERPROFILE%\.cookiecutters\flet-build-template
 
+set GRADLE_OPTS=-Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.jvmargs="-Xmx4096m -XX:+UseParallelGC"
+
+echo Limpiando temporales pesados previos para acelerar...
+if exist storage\temp rmdir /s /q storage\temp
+if exist dist rmdir /s /q dist
+
 echo Verificando instalacion de Flet y Git...
 "%APPDATA%\Python\Python313\Scripts\flet.exe" --version
 git --version
 echo.
-echo Iniciando compilacion de paquete APK (incluyendo .env y assets)...
-"%APPDATA%\Python\Python313\Scripts\flet.exe" build apk ./ --icon assets/icon.png --project PointList --org com.pointlist.app --product "PointList" --build-version "1.0.0" --build-number 1 --template "%TEMPLATE_PATH%" --no-rich-output --exclude .venv __pycache__ .git .idea .vscode
+echo Iniciando compilacion ultra rapida de paquete APK (PointList v13.5)...
+"%APPDATA%\Python\Python313\Scripts\flet.exe" build apk ./ --icon assets/icon.png --project PointList --org com.pointlist.app --product "PointList" --build-version "1.0.0" --build-number 1 --template "%TEMPLATE_PATH%" --no-rich-output --exclude .venv __pycache__ .git .idea .vscode build dist storage/temp assets/figma_assets *.log *.tmp
 echo.
 if exist build\apk\app-release.apk (
     echo ===================================================

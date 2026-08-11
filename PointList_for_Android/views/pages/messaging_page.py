@@ -42,11 +42,108 @@ class MessagingPage(BasePage):
         self._file_picker = ft.FilePicker(on_result=self._on_file_selected)
         self.page.overlay.append(self._file_picker)
 
+        # Iniciar sincronizador de mensajes en tiempo real y notificaciones APK
+        self._start_realtime_sync()
+
     def _save_chat_states(self):
         """Guarda los IDs archivados y borrados en el caché global."""
         from services.navigation_service import NavigationController
         NavigationController.cache[f"archived_chats_{self._uid}"] = list(self._archived_ids)
         NavigationController.cache[f"deleted_chats_{self._uid}"] = list(self._deleted_ids)
+
+    def _clear_active_chat_history(self, e=None):
+        """Vacía inmediatamente todo el historial del chat activo (UI, caché y Supabase)."""
+        if not self._selected_contact:
+            return
+
+        cid = self._selected_contact["id"]
+        is_group = self._selected_contact.get("es_grupo", False)
+        name = self._contact_display_name(self._selected_contact)
+
+        from services.navigation_service import NavigationController
+        if "messages" in NavigationController.cache and cid in NavigationController.cache["messages"]:
+            NavigationController.cache["messages"][cid] = []
+
+        self._refresh_messages()
+
+        try:
+            self.page.open(ft.SnackBar(
+                content=ft.Row([
+                    ft.Icon(ft.Icons.CLEANING_SERVICES, color="white"),
+                    ft.Text(f"Historial con {name} vaciado por completo", color="white", weight="bold")
+                ], spacing=8),
+                bgcolor="#10B981"
+            ))
+        except: pass
+
+        def _bg_clear():
+            try:
+                if is_group:
+                    self._db.eliminar_conversacion(self._uid, gid=cid)
+                else:
+                    self._db.eliminar_conversacion(self._uid, rid=cid)
+            except: pass
+        threading.Thread(target=_bg_clear, daemon=True).start()
+
+    def _trigger_apk_notification(self, sender_name: str, msg_content: str):
+        """Dispara una notificación flotante instantánea en la app / APK de Android."""
+        try:
+            if not self.page:
+                return
+            snack = ft.SnackBar(
+                content=ft.Row([
+                    ft.Icon(ft.Icons.CHAT_BUBBLE, color="white", size=20),
+                    ft.Column([
+                        ft.Text(f"💬 Mensaje de {sender_name}", weight="bold", color="white", size=13),
+                        ft.Text(msg_content[:45] + ("..." if len(msg_content) > 45 else ""), color="white", size=11),
+                    ], spacing=1, tight=True, expand=True)
+                ], spacing=10),
+                bgcolor="#10B981",
+                duration=3500,
+                behavior=ft.SnackBarBehavior.FLOATING,
+            )
+            self.page.open(snack)
+        except: pass
+
+    def _start_realtime_sync(self):
+        """Polling en tiempo real (1.5s) para mensajes instantáneos y notificaciones de APK."""
+        self._stop_sync = False
+
+        def _poll_worker():
+            while not getattr(self, "_stop_sync", False):
+                time.sleep(0.3)
+                try:
+                    if not self.page:
+                        break
+                    if self._selected_contact:
+                        cid = self._selected_contact["id"]
+                        is_group = self._selected_contact.get("es_grupo", False)
+
+                        if is_group:
+                            fresh = self._db.obtener_mensajes(self._uid, gid=cid) or []
+                        else:
+                            fresh = self._db.obtener_mensajes(self._uid, rid=cid) or []
+
+                        from services.navigation_service import NavigationController
+                        if "messages" not in NavigationController.cache:
+                            NavigationController.cache["messages"] = {}
+
+                        old = NavigationController.cache["messages"].get(cid, [])
+                        if len(fresh) > len(old):
+                            new_items = fresh[len(old):]
+                            NavigationController.cache["messages"][cid] = fresh
+                            self._refresh_messages()
+
+                            for nm in new_items:
+                                sender_id = str(nm.get("sender_id") or nm.get("emisor_id"))
+                                if sender_id != str(self._uid):
+                                    sname = self._contact_display_name(self._selected_contact)
+                                    mcontent = nm.get("content") or nm.get("contenido") or "Nuevo adjunto"
+                                    self._trigger_apk_notification(sname, mcontent)
+                except:
+                    pass
+
+        threading.Thread(target=_poll_worker, daemon=True).start()
 
     def _contact_display_name(self, contact: dict) -> str:
         """Obtiene el nombre visible de un contacto con fallbacks."""
@@ -837,6 +934,12 @@ class MessagingPage(BasePage):
                                 ft.Text(self.translate("messaging_online"), size=11, color=ft.Colors.GREEN_400),
                             ], spacing=4),
                         ], expand=True, spacing=0),
+                        ft.IconButton(
+                            icon=ft.Icons.DELETE_SWEEP,
+                            icon_color="#EF4444",
+                            tooltip="Vaciar todo el historial del chat",
+                            on_click=self._clear_active_chat_history,
+                        ),
                     ], spacing=8),
                 ),
                 ft.Container(

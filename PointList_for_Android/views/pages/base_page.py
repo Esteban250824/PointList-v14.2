@@ -187,13 +187,11 @@ class BasePage:
                 controls=[
                     ft.Row([
                         self._build_popup_menu(),
-                        ft.Container(width=4),
-                        ft.Image(src="assets/logo.png", width=24 if is_mob else 28, height=24 if is_mob else 28, fit=ft.ImageFit.CONTAIN),
-                        ft.Text(
-                            title if is_mob else "PointList",
-                            size=18 if is_mob else 20,
-                            weight=ft.FontWeight.BOLD,
-                            color=colors["text"],
+                        ft.Container(width=6),
+                        ft.Image(
+                            src="assets/logo.png",
+                            height=32 if is_mob else 36,
+                            fit=ft.ImageFit.CONTAIN,
                         ),
                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                     ft.Row(right_controls, vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
