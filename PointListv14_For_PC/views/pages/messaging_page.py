@@ -38,7 +38,7 @@ class MessagingPage(BasePage):
         self._start_realtime_poller()
 
     def _start_realtime_poller(self):
-        """Inicia un hilo en segundo plano para sincronizar mensajes entrantes en tiempo real cada 1.5 segundos."""
+        """Inicia un hilo en segundo plano para sincronizar mensajes entrantes en tiempo real ultra rápido (cada 0.3 segundos)."""
         if hasattr(self, "_poller_started") and self._poller_started:
             return
         self._poller_started = True
@@ -47,7 +47,7 @@ class MessagingPage(BasePage):
             import copy
             last_counts = {}
             while True:
-                time.sleep(1.5)
+                time.sleep(0.3)
                 try:
                     if not self.page or not self._uid:
                         continue
