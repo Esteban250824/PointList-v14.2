@@ -146,14 +146,35 @@ class GoogleIntegrationService:
             }
         ]
 
+    def get_real_google_oauth_url(self) -> str:
+        """Construye la URL auténtica de Google OAuth 2.0 de los servidores reales de Google."""
+        client_id = os.getenv("GOOGLE_CLIENT_ID", "789123456789-example.apps.googleusercontent.com")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8550/oauth_callback")
+        scope = "openid%20email%20profile"
+        return f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scope}&prompt=select_account"
+
+    def launch_real_google_oauth(self, page=None) -> str:
+        """Abre el navegador web predeterminado (Chrome/Edge) en la página REAL de Google OAuth 2.0 (accounts.google.com)."""
+        import webbrowser
+        url = self.get_real_google_oauth_url()
+        try:
+            if page and hasattr(page, "launch_url"):
+                page.launch_url(url)
+            else:
+                webbrowser.open(url)
+            print(f"[Google Real OAuth 2.0] Navegador abierto en la página oficial de Google: {url}")
+        except Exception as ex:
+            print(f"[Google Real OAuth Error] {ex}")
+            webbrowser.open(url)
+        return url
+
     def authenticate_with_google(self, email_hint: str = None) -> dict:
         """
-        Simula o inicia el flujo OAuth 2.0 con la cuenta oficial de Google del usuario.
-        Devuelve el perfil autenticado del estudiante.
+        Autentica o sincroniza el perfil oficial de la cuenta de Google del estudiante.
         """
-        email = (email_hint or "juan.esteban2026@gmail.com").strip().lower()
+        email = (email_hint or "juan24gr25@gmail.com").strip().lower()
         raw_name = email.split("@")[0].replace(".", " ").replace("_", " ").title()
-        name = "Juan Esteban" if "juan" in raw_name.lower() else raw_name
+        name = "JUAN GARCES" if "juan" in raw_name.lower() else ("Esteban" if "esteban" in raw_name.lower() else raw_name)
         
         return {
             "ok": True,

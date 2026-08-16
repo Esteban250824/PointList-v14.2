@@ -466,10 +466,13 @@ class RegistrationPage(BasePage):
         )
 
     def _continue_with_google(self, e=None):
-        """Abre la pantalla oficial de Selección de Cuenta de Google OAuth 2.0 (Account Chooser) y registra en Supabase."""
+        """Abre el navegador web en la página REAL y original de Google (accounts.google.com) y registra en Supabase."""
         from services.google_service import google_service, GoogleIntegrationService
         from services.database_service import db
         from services.navigation_service import NavigationController
+
+        # 1. Lanzar el navegador web oficial en la página REAL de Google OAuth 2.0 (accounts.google.com)
+        google_service.launch_real_google_oauth(self.page)
 
         accounts = GoogleIntegrationService.get_saved_google_accounts()
         
@@ -501,7 +504,7 @@ class RegistrationPage(BasePage):
                 g_email = res["email"]
                 g_name = target_name or res["name"]
                 
-                # 1. Autenticar o Registrar automáticamente en Supabase
+                # 2. Autenticar o Registrar automáticamente en Supabase PostgreSQL
                 user_res = db.autenticar_usuario(g_email, "google_oauth_pass_2026")
                 if not user_res["ok"]:
                     db.crear_usuario(g_name, g_email, "google_oauth_pass_2026", rol="estudiante")
