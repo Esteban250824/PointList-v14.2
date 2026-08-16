@@ -239,27 +239,42 @@ class LoginPage(BasePage):
         )
 
     def _continue_with_google(self, e=None):
-        """Abre el diálogo modal oficial de Selección de Cuenta de Google (Account Chooser)."""
+        """Abre la pantalla oficial de Selección de Cuenta de Google OAuth 2.0 (Account Chooser) y registra en Supabase."""
         from services.google_service import google_service, GoogleIntegrationService
         from services.database_service import db
         from services.navigation_service import NavigationController
 
         accounts = GoogleIntegrationService.get_saved_google_accounts()
+        
         custom_email_input = ft.TextField(
             hint_text="ingresa_tu_correo@gmail.com",
             border_radius=10,
             text_size=13,
+            bgcolor="#2A2A2A",
+            border_color="#444444",
+            color="#FFFFFF",
+            visible=False,
+            expand=True
+        )
+        custom_name_input = ft.TextField(
+            hint_text="Tu Nombre Completo",
+            border_radius=10,
+            text_size=13,
+            bgcolor="#2A2A2A",
+            border_color="#444444",
+            color="#FFFFFF",
             visible=False,
             expand=True
         )
 
-        def _login_with_email(target_email):
+        def _login_with_email(target_email, target_name):
             self.page.close(dlg)
             res = google_service.authenticate_with_google(target_email)
             if res["ok"]:
                 g_email = res["email"]
-                g_name = res["name"]
+                g_name = target_name or res["name"]
                 
+                # 1. Autenticar o Registrar automáticamente en Supabase
                 user_res = db.autenticar_usuario(g_email, "google_oauth_pass_2026")
                 if not user_res["ok"]:
                     db.crear_usuario(g_name, g_email, "google_oauth_pass_2026", rol="estudiante")
@@ -271,8 +286,9 @@ class LoginPage(BasePage):
                         "id": user.get("id"),
                         "name": user.get("nombre_usuario", g_name),
                         "email": g_email,
-                        "photo_url": res["photo_url"],
+                        "photo_url": "https://lh3.googleusercontent.com/a/default-user=s96-c",
                         "rol": user.get("rol", "estudiante"),
+                        "auth_provider": "google.com",
                     }
                     self.page.client_storage.set("current_user", current_user_data)
                     NavigationController.cache["current_user"] = current_user_data
@@ -281,59 +297,116 @@ class LoginPage(BasePage):
                     NavigationController.update_view("Inicio")
 
         account_tiles = []
-        for acc in accounts:
-            account_tiles.append(
-                ft.ListTile(
-                    leading=ft.CircleAvatar(content=ft.Text(acc["name"][0], weight="bold", color="white"), bgcolor="#4285F4"),
-                    title=ft.Text(acc["name"], weight="bold", size=14),
-                    subtitle=ft.Text(acc["email"], size=12, color="#64748B"),
-                    on_click=lambda _, em=acc["email"]: _login_with_email(em)
-                )
+        for idx, acc in enumerate(accounts):
+            avatar = ft.Container(
+                width=40,
+                height=40,
+                border_radius=20,
+                bgcolor=acc.get("bg", "#0284C7"),
+                alignment=ft.alignment.center,
+                content=ft.Text(acc["initials"], color="white", weight=ft.FontWeight.BOLD, size=16)
             )
+            
+            tile = ft.Container(
+                padding=ft.padding.symmetric(horizontal=12, vertical=10),
+                border_radius=10,
+                on_click=lambda _, em=acc["email"], nm=acc["name"]: _login_with_email(em, nm),
+                content=ft.Row([
+                    avatar,
+                    ft.Container(width=12),
+                    ft.Column([
+                        ft.Text(acc["name"], size=14, weight=ft.FontWeight.BOLD, color="#FFFFFF"),
+                        ft.Text(acc["email"], size=12, color="#94A3B8"),
+                    ], spacing=2, expand=True)
+                ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
+            )
+            account_tiles.append(tile)
+            if idx < len(accounts) - 1:
+                account_tiles.append(ft.Divider(color="#334155", height=1))
 
-        def _toggle_custom_email(e):
+        def _toggle_custom_email(ev):
             custom_email_input.visible = not custom_email_input.visible
+            custom_name_input.visible = not custom_name_input.visible
             try: self.page.update()
             except: pass
 
-        def _submit_custom_email(e):
-            val = custom_email_input.value.strip()
-            if val and "@" in val:
-                _login_with_email(val)
+        def _submit_custom_email(ev):
+            em = custom_email_input.value.strip()
+            nm = custom_name_input.value.strip() or em.split("@")[0].title()
+            if em and "@" in em:
+                _login_with_email(em, nm)
 
-        account_tiles.append(
-            ft.ListTile(
-                leading=ft.Icon(ft.Icons.PERSON_ADD_OUTLINED, color="#4285F4"),
-                title=ft.Text("Usar otra cuenta de Google...", size=13, weight="bold", color="#4285F4"),
-                on_click=_toggle_custom_email
-            )
+        # Usar otra cuenta
+        another_tile = ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=10),
+            border_radius=10,
+            on_click=_toggle_custom_email,
+            content=ft.Row([
+                ft.Container(
+                    width=40,
+                    height=40,
+                    border_radius=20,
+                    border=ft.border.all(1, "#64748B"),
+                    alignment=ft.alignment.center,
+                    content=ft.Icon(ft.Icons.PERSON_ADD_OUTLINED, color="#94A3B8", size=18)
+                ),
+                ft.Container(width=12),
+                ft.Text("Usar otra cuenta", size=13, weight=ft.FontWeight.BOLD, color="#FFFFFF")
+            ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
+        )
+        
+        custom_input_box = ft.Column([
+            custom_name_input,
+            custom_email_input,
+            ft.ElevatedButton("Iniciar sesión con Google", bgcolor="#4285F4", color="white", on_click=_submit_custom_email)
+        ], visible=True, spacing=8)
+
+        # Contenedor Oscuro idéntico al diseño oficial de Google OAuth
+        card_content = ft.Container(
+            width=650,
+            bgcolor="#121212",
+            border_radius=20,
+            padding=ft.padding.all(28),
+            content=ft.Column([
+                # Fila Superior (Logo Google + Acceder con Google)
+                ft.Row([
+                    ft.Text("G", size=20, weight="bold", color="#4285F4"),
+                    ft.Text("o", size=20, weight="bold", color="#EA4335"),
+                    ft.Text("o", size=20, weight="bold", color="#FBBC05"),
+                    ft.Text("g", size=20, weight="bold", color="#4285F4"),
+                    ft.Text("l", size=20, weight="bold", color="#34A853"),
+                    ft.Text("e", size=20, weight="bold", color="#EA4335"),
+                    ft.Container(width=8),
+                    ft.Text("Acceder con Google", size=14, color="#E2E8F0", weight=ft.FontWeight.W_500),
+                ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                ft.Container(height=24),
+                # Cuerpo Principal de 2 Columnas
+                ft.Row([
+                    # Columna Izquierda (Info de App)
+                    ft.Column([
+                        ft.Icon(ft.Icons.AUTO_AWESOME_MOTION, color="#0284C7", size=36),
+                        ft.Container(height=16),
+                        ft.Text("Elige una cuenta", size=28, weight=ft.FontWeight.BOLD, color="#FFFFFF"),
+                        ft.Text("Ir a PointList", size=14, color="#94A3B8"),
+                    ], expand=True, spacing=2),
+                    ft.Container(width=24),
+                    # Columna Derecha (Lista de Cuentas)
+                    ft.Column([
+                        ft.Column(account_tiles, spacing=4),
+                        ft.Divider(color="#334155", height=1),
+                        another_tile,
+                        custom_input_box,
+                        ft.Container(height=16),
+                        ft.Text("Antes de usar PointList, revisa su Política de Privacidad y Condiciones del Servicio.", size=11, color="#64748B"),
+                    ], expand=True, spacing=4)
+                ], cross_axis_alignment=ft.CrossAxisAlignment.START),
+            ], tight=True, spacing=0)
         )
 
         dlg = ft.AlertDialog(
-            title=ft.Column([
-                ft.Row([
-                    ft.Text("G", size=24, weight="bold", color="#4285F4"),
-                    ft.Text("o", size=24, weight="bold", color="#EA4335"),
-                    ft.Text("o", size=24, weight="bold", color="#FBBC05"),
-                    ft.Text("g", size=24, weight="bold", color="#4285F4"),
-                    ft.Text("l", size=24, weight="bold", color="#34A853"),
-                    ft.Text("e", size=24, weight="bold", color="#EA4335"),
-                ], spacing=1, alignment=ft.MainAxisAlignment.CENTER),
-                ft.Text("Elige una cuenta", size=18, weight="bold", text_align=ft.TextAlign.CENTER),
-                ft.Text("para continuar en PointList", size=12, color="#64748B", text_align=ft.TextAlign.CENTER),
-            ], spacing=2, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-            content=ft.Container(
-                width=380,
-                content=ft.Column([
-                    ft.Column(account_tiles, spacing=4),
-                    ft.Container(height=6),
-                    custom_email_input,
-                    ft.ElevatedButton("Continuar con esta cuenta", bgcolor="#4285F4", color="white", on_click=_submit_custom_email)
-                ], tight=True, spacing=6)
-            ),
-            actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg))
-            ]
+            content=card_content,
+            bgcolor="transparent",
+            content_padding=ft.padding.all(0),
         )
         self.page.open(dlg)
 

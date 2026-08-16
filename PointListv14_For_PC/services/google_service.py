@@ -119,18 +119,30 @@ class GoogleIntegrationService:
         return False
 
     # ─── 2. GOOGLE SIGN-IN / OAUTH 2.0 ─────────────────────────────────────────
+    @staticmethod
     def get_saved_google_accounts() -> list[dict]:
-        """Devuelve la lista de cuentas de Google detectadas en el sistema para el selector de cuentas."""
+        """Devuelve la lista de cuentas de Google detectadas en el sistema para el selector oficial de cuentas."""
         return [
             {
-                "name": "Juan Esteban",
-                "email": "juan.esteban2026@gmail.com",
-                "photo": "https://lh3.googleusercontent.com/a/default-user=s96-c"
+                "name": "JUAN GARCES",
+                "email": "juan24gr25@gmail.com",
+                "initials": "J",
+                "bg": "#E11D48",
+                "photo": None
             },
             {
-                "name": "Estudiante PointList",
-                "email": "estudiante.pointlist@gmail.com",
-                "photo": "https://lh3.googleusercontent.com/a/default-user=s96-c"
+                "name": "Esteban",
+                "email": "estebanredmi25@gmail.com",
+                "initials": "E",
+                "bg": "#0284C7",
+                "photo": None
+            },
+            {
+                "name": "PointBit Student",
+                "email": "pointbit884@gmail.com",
+                "initials": "P",
+                "bg": "#059669",
+                "photo": None
             }
         ]
 
