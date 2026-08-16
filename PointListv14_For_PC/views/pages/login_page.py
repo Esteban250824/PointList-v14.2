@@ -399,7 +399,7 @@ class LoginPage(BasePage):
                         ft.Container(height=16),
                         ft.Text("Antes de usar PointList, revisa su Política de Privacidad y Condiciones del Servicio.", size=11, color="#64748B"),
                     ], expand=True, spacing=4)
-                ], cross_axis_alignment=ft.CrossAxisAlignment.START),
+                ], vertical_alignment=ft.CrossAxisAlignment.START),
             ], tight=True, spacing=0)
         )
 
