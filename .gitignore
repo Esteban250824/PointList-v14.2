@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PointList v14.2 - Root GitIgnore (Seguridad & Limpieza)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1. ARCHIVOS CON CREDENCIALES Y CLAVES PRIVADAS (CRÍTICO DE SEGURIDAD)
+.env
+.env.local
+.env.*.local
+*.env
+**/.env
+**/*.env
+
+# 2. CARPETAS DE COMPILACIÓN Y EJECUTABLES
+build/
+dist/
+**/build/
+**/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.pyd
+
+# 3. CACHÉ DE PYTHON Y TEMPORALES
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.spec.bak
+scratch/
+**/scratch/
+
+# 4. ALMACENAMIENTO DE DATOS LOCALES Y TEMPORALES
+storage/data/*
+storage/temp/*
+!storage/data/.gitkeep
+!storage/temp/.gitkeep
+
+# 5. ENTORNOS VIRTUALES
+venv/
+env/
+ENV/
+.venv/
+**/.venv/
+
+# 6. IDEs Y ARCHIVOS DE SISTEMA
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
