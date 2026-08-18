@@ -91,8 +91,9 @@ class AssignmentsPage(BasePage):
         if not self._assignments:
             self._assignments = copy.deepcopy(self.DEFAULT_ASSIGNMENTS)
             NavigationController.cache["assignments"] = self._assignments
-        self._filter_status = "Todas"
-        self._search_term = ""
+        self._filter_status = getattr(self, "_filter_status", "Todas")
+        self._filter_subject = getattr(self, "_filter_subject", "Todas")
+        self._search_term = getattr(self, "_search_term", "")
         self._main_column = ft.Column(spacing=14, scroll=get_scroll_mode("AUTO"), expand=True)
 
     def _refresh_ui(self):
@@ -189,7 +190,7 @@ class AssignmentsPage(BasePage):
             kpi_card("Calificadas", graded_count, ft.Icons.GRADE, "#DCFCE7", "#16A34A"),
         ], spacing=12)
 
-        # ─── BARRA DE BÚSQUEDA Y FILTROS ──────────────────────────────────────
+        # ─── BARRA DE BÚSQUEDA, ASIGNATURAS Y FILTROS ─────────────────────────
         search_field = ft.TextField(
             hint_text="Buscar tarea por titulo o asignatura...",
             prefix_icon=ft.Icons.SEARCH,
@@ -199,6 +200,25 @@ class AssignmentsPage(BasePage):
             height=40,
             content_padding=ft.padding.symmetric(horizontal=10, vertical=4),
             on_change=lambda e: setattr(self, "_search_term", e.control.value.lower().strip())
+        )
+
+        subject_options = [ft.dropdown.Option("Todas", text="📚 Todas las Materias")] + [
+            ft.dropdown.Option(s, text=f"📘 {s}") for s in self.SUBJECTS
+        ]
+
+        def _on_subject_change(e):
+            self._filter_subject = e.control.value
+            self._refresh_ui()
+
+        subject_dropdown = ft.Dropdown(
+            options=subject_options,
+            value=self._filter_subject,
+            width=210,
+            height=40,
+            border_radius=10,
+            bgcolor=colors["surface"],
+            content_padding=ft.padding.symmetric(horizontal=10, vertical=4),
+            on_change=_on_subject_change
         )
 
         filter_buttons = []
@@ -223,6 +243,7 @@ class AssignmentsPage(BasePage):
 
         filter_row = ft.Row([
             search_field,
+            subject_dropdown,
             ft.Row(filter_buttons, spacing=6)
         ], spacing=12)
 
@@ -230,10 +251,12 @@ class AssignmentsPage(BasePage):
         filtered = []
         for a in self._assignments:
             st = a.get("estado", "Pendiente")
+            subj = a.get("asignatura", "")
             if self._filter_status == "Pendientes" and st != "Pendiente": continue
             if self._filter_status == "Entregadas" and st != "Entregado": continue
             if self._filter_status == "Calificadas" and st != "Calificado": continue
-            if self._search_term and self._search_term not in a.get("titulo", "").lower() and self._search_term not in a.get("asignatura", "").lower():
+            if self._filter_subject != "Todas" and subj != self._filter_subject: continue
+            if self._search_term and self._search_term not in a.get("titulo", "").lower() and self._search_term not in subj.lower():
                 continue
             filtered.append(a)
 
