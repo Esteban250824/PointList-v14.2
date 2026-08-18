@@ -218,7 +218,7 @@ class UserProfilePage(BasePage):
                 ft.Text("Completa tareas y estudia con Pomodoro para desbloquear nuevos reconocimientos:", size=12, color=colors["text_secondary"]),
                 ft.Container(height=16),
                 ft.Row([
-                    build_badge("⚡ Estudiante Jolteon", "Navegación y estudio a máxima velocidad (0ms).", ft.Icons.BOLT, "#D97706", "#FEF3C7"),
+                    build_badge("🚀 Estudiante Veloz", "Navegación y estudio a máxima velocidad en tiempo real.", ft.Icons.SPEED, "#D97706", "#FEF3C7"),
                     build_badge("⏱️ Maestro Pomodoro", "Más de 50 bloques de concentración completados.", ft.Icons.TIMER, "#EA580C", "#FFEDD5"),
                 ], spacing=12),
                 ft.Container(height=12),

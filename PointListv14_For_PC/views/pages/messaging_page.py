@@ -411,13 +411,29 @@ class MessagingPage(BasePage):
         except: pass
 
     def _select_contact(self, contact):
-        """Selecciona un contacto y actualiza directamente el contenedor del panel derecho."""
+        """Selecciona un contacto en 0ms leyendo el caché y actualiza mensajes en segundo plano."""
         self._selected_contact = contact
         self._refresh_contacts_list()
         self._right_panel_container.content = self._build_right_panel_content()
         try:
             self.page.update()
         except: pass
+
+        # Sincronización asíncrona en segundo plano sin congelar la interfaz
+        def _bg_fetch():
+            cid = contact["id"]
+            if str(cid).isdigit() or isinstance(cid, int):
+                try:
+                    db_msgs = self._db.obtener_mensajes_contacto(self._uid, cid) or []
+                    from services.navigation_service import NavigationController
+                    if "messages" not in NavigationController.cache:
+                        NavigationController.cache["messages"] = {}
+                    NavigationController.cache["messages"][cid] = db_msgs
+                    if self._selected_contact and self._selected_contact.get("id") == cid:
+                        self._refresh_messages()
+                except: pass
+
+        threading.Thread(target=_bg_fetch, daemon=True).start()
         self._refresh_messages()
 
     def _delete_chat_action(self, contact):

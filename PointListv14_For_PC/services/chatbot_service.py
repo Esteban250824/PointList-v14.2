@@ -340,14 +340,15 @@ class ChatBotService:
             f"Responde ÚNICAMENTE con un objeto JSON válido sin bloques de código Markdown ni texto adicional, usando esta estructura exacta:\n"
             f'{{\n  "tema_central": "{tema}",\n  "resumen_ejecutivo": "Sinopsis clara del concepto estilo NotebookLM en 2 oraciones.",\n  "ramas": [\n    {{\n      "titulo": "1. Nombre de la Rama Principal",\n      "puntos": ["Concepto o subtema 1", "Concepto o subtema 2", "Concepto o subtema 3"]\n    }},\n    {{\n      "titulo": "2. Nombre de la Rama 2",\n      "puntos": ["Concepto o subtema 1", "Concepto o subtema 2"]\n    }}\n  ]\n}}'
         )
-        raw = self.send_message(prompt, max_tokens=1200)
+        raw = self.send_message(prompt, max_tokens=1200) or ""
         try:
-            s_idx = raw.find("{")
-            e_idx = raw.rfind("}") + 1
-            if s_idx != -1 and e_idx > s_idx:
-                parsed = json.loads(raw[s_idx:e_idx])
-                if isinstance(parsed, dict) and "ramas" in parsed:
-                    return parsed
+            if isinstance(raw, str):
+                s_idx = raw.find("{")
+                e_idx = raw.rfind("}") + 1
+                if s_idx != -1 and e_idx > s_idx:
+                    parsed = json.loads(raw[s_idx:e_idx])
+                    if isinstance(parsed, dict) and "ramas" in parsed:
+                        return parsed
         except Exception as ex:
             print(f"[NotebookLM MindMap Error] {ex}")
 
@@ -372,14 +373,15 @@ class ChatBotService:
             f"Responde ÚNICAMENTE con un arreglo JSON válido sin texto adicional ni Markdown, con esta estructura exacta:\n"
             f'[\n  {{\n    "pregunta": "¿Qué es ...?",\n    "respuesta": "Explicación clara y concisa.",\n    "pista": "Pista mnemotécnica para recordar."\n  }}\n]'
         )
-        raw = self.send_message(prompt, max_tokens=1200)
+        raw = self.send_message(prompt, max_tokens=1200) or ""
         try:
-            s_idx = raw.find("[")
-            e_idx = raw.rfind("]") + 1
-            if s_idx != -1 and e_idx > s_idx:
-                parsed = json.loads(raw[s_idx:e_idx])
-                if isinstance(parsed, list) and len(parsed) > 0:
-                    return parsed
+            if isinstance(raw, str):
+                s_idx = raw.find("[")
+                e_idx = raw.rfind("]") + 1
+                if s_idx != -1 and e_idx > s_idx:
+                    parsed = json.loads(raw[s_idx:e_idx])
+                    if isinstance(parsed, list) and len(parsed) > 0:
+                        return parsed
         except Exception as ex:
             print(f"[NotebookLM Flashcards Error] {ex}")
 

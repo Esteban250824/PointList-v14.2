@@ -295,43 +295,6 @@ class HomePage(BasePage):
             ], spacing=4)
         )
 
-        # ─── Banner de Accesos Rápidos "Jolteon Speed ⚡" ──────────────────────
-        def build_quick_btn(title, icon, color, view_name):
-            return ft.Container(
-                padding=ft.padding.symmetric(horizontal=16, vertical=10),
-                bgcolor=colors["card_bg"],
-                border_radius=14,
-                border=ft.border.all(1, color),
-                ink=True,
-                on_click=lambda e: NavigationController.update_view(view_name),
-                content=ft.Row([
-                    ft.Icon(icon, color=color, size=18),
-                    ft.Text(title, size=13, weight="bold", color=colors["text"])
-                ], spacing=8)
-            )
-
-        jolteon_banner = ft.Container(
-            padding=16,
-            bgcolor="#FEF3C7" if not is_dark else "#451A03",
-            border_radius=16,
-            border=ft.border.all(1, "#F59E0B"),
-            content=ft.Column([
-                ft.Row([
-                    ft.Icon(ft.Icons.BOLT, color="#D97706", size=22),
-                    ft.Text("Módulos Rápidos de Estudio Activo ⚡", size=15, weight="bold", color="#B45309" if not is_dark else "#FCD34D"),
-                    ft.Container(expand=True),
-                    ft.Text("Navegación Jolteon 0ms", size=11, color="#D97706", weight="bold")
-                ]),
-                ft.Container(height=6),
-                ft.Row([
-                    build_quick_btn("🎴 Flashcards IA", ft.Icons.STYLE, "#0284C7", "Flashcards"),
-                    build_quick_btn("⏱️ Pomodoro Pro", ft.Icons.TIMER, "#EA580C", "Pomodoro"),
-                    build_quick_btn("🤖 PointBit IA", ft.Icons.SMART_TOY, "#10B981", "ChatBot"),
-                    build_quick_btn("📚 Técnicas IA", ft.Icons.AUTO_AWESOME, "#7C3AED", "Tecnicas"),
-                ], spacing=10, scroll=get_scroll_mode(self.page))
-            ], spacing=4)
-        )
-
         # ─── Principal de Contenido ───
         dashboard_content = ft.Container(
             expand=True,
@@ -342,8 +305,6 @@ class HomePage(BasePage):
                     ft.Text(self.translate("welcome_user").format(name=user_name), size=28, weight=ft.FontWeight.BOLD, color=colors["text"]),
                     ft.Text(self.translate("welcome_subtitle"), size=14, color=colors["text_secondary"]),
                 ], spacing=2),
-                ft.Container(height=12),
-                jolteon_banner,
                 ft.Container(height=12),
                 stats_row,
                 ft.Container(height=12),
