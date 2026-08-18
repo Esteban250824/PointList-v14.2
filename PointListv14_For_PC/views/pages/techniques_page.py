@@ -903,27 +903,83 @@ class StudyMethodsPage(BasePage):
                 ], spacing=0)
             )
 
-        # ─── HERRAMIENTA 6: MÉTODO SMART ─────────────────────────────────────
+        # ─── HERRAMIENTA 6: MÉTODO SMART (DISEÑO EXACTO IMAGEN ADJUNTA) ───────
         elif key == "smart":
-            s_field = ft.TextField(hint_text="S - Específico: ¿Qué tema o tarea exacta vas a realizar?", border_radius=10)
-            m_field = ft.TextField(hint_text="M - Medible: ¿Cómo comprobarás el éxito? (ej: 10 ejercicios resueltos)", border_radius=10)
-            a_field = ft.TextField(hint_text="A - Alcanzable: ¿Cuentas con el tiempo y apuntes necesarios?", border_radius=10)
-            r_field = ft.TextField(hint_text="R - Relevante: ¿Para qué examen o meta te prepara?", border_radius=10)
-            t_field = ft.TextField(hint_text="T - Tiempo: ¿En cuántos minutos u horas lo terminarás?", border_radius=10)
+            # Campos de entrada interactivos con valores persistentes
+            s_val = ft.Ref[ft.TextField]()
+            m_val = ft.Ref[ft.TextField]()
+            a_val = ft.Ref[ft.TextField]()
+            r_val = ft.Ref[ft.TextField]()
+            t_val = ft.Ref[ft.TextField]()
 
-            interactive_widget = ft.Container(
-                padding=24, bgcolor=colors["surface"], border_radius=16, border=ft.border.all(1, "#E2E8F0"),
-                content=ft.Column([
-                    ft.Text("Planificador de Objetivos SMART", size=18, weight="bold", color=colors["text"]),
-                    ft.Text("Formula tu meta de estudio de forma rigurosa completando cada criterio:", size=12, color=colors["text_secondary"]),
-                    ft.Container(height=14),
-                    s_field, ft.Container(height=8),
-                    m_field, ft.Container(height=8),
-                    a_field, ft.Container(height=8),
-                    r_field, ft.Container(height=8),
-                    t_field,
-                ], spacing=0)
-            )
+            def smart_card(letter, title, subtitle, hint, strip_color, bg_badge, fg_badge, text_ref):
+                return ft.Container(
+                    bgcolor=colors["surface"],
+                    border_radius=14,
+                    border=ft.border.all(1, "#E2E8F0"),
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    content=ft.Row([
+                        # Franja de color izquierda
+                        ft.Container(width=6, bgcolor=strip_color),
+                        ft.Container(
+                            padding=ft.padding.symmetric(horizontal=16, vertical=12),
+                            expand=True,
+                            content=ft.Row([
+                                # Círculo con la letra
+                                ft.Container(
+                                    width=40, height=40, border_radius=20, bgcolor=bg_badge,
+                                    alignment=ft.alignment.center,
+                                    content=ft.Text(letter, size=18, weight="bold", color=fg_badge)
+                                ),
+                                # Título y subtítulo
+                                ft.Column([
+                                    ft.Text(title, size=14, weight="bold", color="#0F172A"),
+                                    ft.Text(subtitle, size=11, color="#64748B")
+                                ], spacing=1, expand=True),
+                                # Campo de texto de respuesta
+                                ft.TextField(
+                                    ref=text_ref,
+                                    hint_text=hint,
+                                    border_radius=10,
+                                    width=380,
+                                    height=42,
+                                    bgcolor="#F8FAFC" if not is_dark else "#1E293B",
+                                    content_padding=ft.padding.symmetric(horizontal=12, vertical=8),
+                                ),
+                                # Chevron icon
+                                ft.Icon(ft.Icons.KEYBOARD_ARROW_DOWN, color="#94A3B8", size=22)
+                            ], spacing=14, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+                        )
+                    ], spacing=0)
+                )
+
+            card_s = smart_card("S", "S - Específico", "¿Qué tema o tarea exacta vas a realizar?", "Escribe aquí tu respuesta...", "#1E293B", "#1E293B", "white", s_val)
+            card_m = smart_card("M", "M - Medible", "¿Cómo comprobarás el éxito? (ej: 10 ejercicios resueltos)", "Escribe aquí tu respuesta...", "#4ADE80", "#DCFCE7", "#16A34A", m_val)
+            card_a = smart_card("A", "A - Alcanzable", "¿Cuentas con el tiempo y apuntes necesarios?", "Escribe aquí tu respuesta...", "#C084FC", "#F3E8FF", "#9333EA", a_val)
+            card_r = smart_card("R", "R - Relevante", "¿Para qué examen o meta te prepara?", "Escribe aquí tu respuesta...", "#FB923C", "#FFEDD5", "#EA580C", r_val)
+            card_t = smart_card("T", "T - Tiempo", "¿En cuántos minutos u horas lo terminarás?", "Escribe aquí tu respuesta...", "#2DD4BF", "#CCFBF1", "#0D9488", t_val)
+
+            sub_header = ft.Row([
+                ft.Container(
+                    width=36, height=36, border_radius=10, bgcolor="#F1F5F9",
+                    alignment=ft.alignment.center,
+                    content=ft.Icon(ft.Icons.TRACK_CHANGES, color="#0F172A", size=20)
+                ),
+                ft.Column([
+                    ft.Text("Planificador de Objetivos SMART", size=15, weight="bold", color="#0F172A"),
+                    ft.Text("Formula tu meta de estudio de forma rigurosa completando cada criterio.", size=11, color="#64748B")
+                ], spacing=1)
+            ], spacing=10)
+
+            interactive_widget = ft.Column([
+                sub_header,
+                ft.Container(height=14),
+                card_s,
+                card_m,
+                card_a,
+                card_r,
+                card_t,
+            ], spacing=12)
 
         # ─── HERRAMIENTA 7: MÉTODO SQ3R ─────────────────────────────────────
         elif key == "sq3r":
@@ -1085,6 +1141,34 @@ class StudyMethodsPage(BasePage):
                 ft.Container(width=300, content=timer_widget),
             ], vertical_alignment=ft.CrossAxisAlignment.START)
 
+        # Header superior con Consejo integrado (Fiel a la imagen)
+        advice_box = ft.Container(
+            padding=14,
+            bgcolor="#F0FDF4",
+            border_radius=14,
+            border=ft.border.all(1, "#DCFCE7"),
+            content=ft.Row([
+                ft.Icon(ft.Icons.AUTO_AWESOME, color="#16A34A", size=18),
+                ft.Column([
+                    ft.Text("Consejo", size=12, weight="bold", color="#15803D"),
+                    ft.Text("Completa cada criterio con atencion y honestidad. Entre más especifico seas, mejores serán tus resultados.", size=10.5, color="#166534")
+                ], spacing=1, expand=True)
+            ], spacing=10)
+        )
+
+        header_section = ft.Row([
+            ft.Container(
+                width=64, height=64, border_radius=16, bgcolor="#F1F5F9",
+                alignment=ft.alignment.center,
+                content=ft.Icon(ft.Icons.ASSIGNMENT_TURNED_IN_OUTLINED, color="#1E3A8A", size=32)
+            ),
+            ft.Column([
+                ft.Text(f"Fase 3: Aplicación Práctica de {title}", size=24, weight="bold", color="#0F172A"),
+                ft.Text("Utiliza esta herramienta interactiva durante tu sesión de estudio.", size=13, color=colors["text_secondary"]),
+            ], spacing=2, expand=True),
+            ft.Container(width=340, content=advice_box)
+        ], vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=16)
+
         apply_view_content = ft.Column([
             navbar,
             ft.Container(
@@ -1093,20 +1177,26 @@ class StudyMethodsPage(BasePage):
                     ft.GestureDetector(
                         on_tap=_back,
                         content=ft.Row([
-                            ft.Icon(ft.Icons.ARROW_BACK, size=20, color="#4F46E5"),
-                            ft.Text("Volver al detalle de la técnica", size=13, weight="bold", color="#4F46E5"),
+                            ft.Icon(ft.Icons.ARROW_BACK, size=18, color="#1E3A8A"),
+                            ft.Text("Volver al detalle de la técnica", size=13, weight="bold", color="#1E3A8A"),
                         ], spacing=6)
                     ),
                     ft.Container(height=16),
-                    ft.Text(f"Fase 3: Aplicación Práctica de {title}", size=24, weight="bold", color=colors["text"]),
-                    ft.Text("Utiliza esta herramienta interactiva durante tu sesión de estudio:", size=13, color=colors["text_secondary"]),
-                    ft.Container(height=20),
+                    header_section,
+                    ft.Container(height=24),
                     interactive_widget,
                     ft.Container(height=24),
                     ft.Row([
-                        ft.ElevatedButton("← Volver a la Guía", bgcolor=ft.Colors.GREY_300, color="#0F172A", height=44, on_click=_back),
                         ft.Container(expand=True),
-                        ft.ElevatedButton("¡Completar sesión! 🎉", bgcolor="#16A34A", color="white", height=44, on_click=_finish),
+                        ft.ElevatedButton(
+                            "➔ Completar sesión",
+                            bgcolor="#4ADE80" if key == "smart" else "#16A34A",
+                            color="white",
+                            height=46,
+                            width=220,
+                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12)),
+                            on_click=_finish
+                        ),
                     ]),
                     ft.Container(height=30),
                 ], scroll=get_scroll_mode("AUTO"), expand=True, spacing=0)
