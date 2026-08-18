@@ -106,19 +106,50 @@ class AssignmentsPage(BasePage):
             hint_text="Escribe aquí los detalles de tu solución...",
             multiline=True, min_lines=3, border_radius=10
         )
+        selected_file_path = [None]
+        file_badge = ft.Text("Ningún archivo adjuntado.", size=12, color="#64748B")
+
+        def _on_file_result(e: ft.FilePickerResultEvent):
+            if e.files and len(e.files) > 0:
+                p = e.files[0].path or e.files[0].name
+                selected_file_path[0] = p
+                file_badge.value = f"📄 Adjuntado: {os.path.basename(p)}"
+                file_badge.color = "#16A34A"
+                file_badge.weight = "bold"
+                try: self.page.update()
+                except: pass
+
+        fp = ft.FilePicker(on_result=_on_file_result)
+        if fp not in self.page.overlay:
+            self.page.overlay.append(fp)
+            try: self.page.update()
+            except: pass
+
+        def _pick(e):
+            fp.pick_files(allow_multiple=False, dialog_title="Selecciona el archivo de tu tarea (PDF, Word, ZIP, Imagen)")
+
         def _do_submit(e):
             assignment["estado"] = "Entregado"
             assignment["entrega_texto"] = text_input.value.strip()
+            if selected_file_path[0]:
+                assignment["archivo_adjunto"] = selected_file_path[0]
             from services.navigation_service import NavigationController
             NavigationController.cache["assignments"] = copy.deepcopy(self._assignments)
             self.page.close(dlg)
-            self._show_success("¡Tarea entregada exitosamente!")
+            self._show_success("¡Tarea y archivo entregados exitosamente!")
             self._refresh_ui()
 
         dlg = ft.AlertDialog(
             modal=True,
             title=ft.Text(f"Entregar: {assignment.get('titulo')}", size=16, weight="bold"),
-            content=text_input,
+            content=ft.Column([
+                text_input,
+                ft.Container(height=6),
+                ft.Row([
+                    ft.ElevatedButton("📎 Adjuntar Archivo (PDF, Word, ZIP)", bgcolor="#0284C7", color="white", on_click=_pick),
+                    file_badge
+                ], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+            ], spacing=6, tight=True),
             actions=[
                 ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg)),
                 ft.ElevatedButton("Confirmar Entrega", bgcolor="#22C55E", color="white", on_click=_do_submit)
@@ -127,6 +158,15 @@ class AssignmentsPage(BasePage):
         self.page.open(dlg)
 
     def _open_view_submission_dialog(self, assignment: dict):
+        attached = assignment.get("archivo_adjunto")
+        file_view = ft.Container(
+            padding=10, bgcolor="#F1F5F9", border_radius=8,
+            content=ft.Row([
+                ft.Icon(ft.Icons.ATTACH_FILE, color="#0284C7", size=18),
+                ft.Text(f"Archivo Entregado: {os.path.basename(attached)}", size=12, weight="bold", color="#0F172A", expand=True)
+            ], spacing=8)
+        ) if attached else ft.Text("Sin archivos adjuntos.", size=12, color="#64748B")
+
         dlg = ft.AlertDialog(
             modal=True,
             title=ft.Text(f"Detalles de Entrega: {assignment.get('titulo')}", size=16, weight="bold"),
@@ -139,7 +179,9 @@ class AssignmentsPage(BasePage):
                 ft.Text(assignment.get("instrucciones", "")),
                 ft.Divider(),
                 ft.Text("Tu respuesta:", weight="bold"),
-                ft.Text(assignment.get("entrega_texto") or "Sin texto adicional.")
+                ft.Text(assignment.get("entrega_texto") or "Sin texto adicional."),
+                ft.Container(height=6),
+                file_view
             ], spacing=6, tight=True),
             actions=[
                 ft.ElevatedButton("Cerrar", bgcolor="#0284C7", color="white", on_click=lambda e: self.page.close(dlg))

@@ -342,6 +342,8 @@ class DatabaseService:
 
     def guardar_interaccion_chatbot(self, uid, sid, pregunta, respuesta, modelo="pointbit"):
         try:
+            pregunta = (pregunta or "Consulta").strip()
+            respuesta = (respuesta or "Respuesta de PointBit.").strip()
             with self._get_cursor() as cursor:
                 cursor.execute("INSERT INTO historial_chatbot (usuario_id, session_id, pregunta, respuesta, modelo, timestamp) VALUES (%s, %s, %s, %s, %s, NOW())", (uid, sid, pregunta, respuesta, modelo))
                 cursor.execute("SELECT COUNT(*) FROM historial_chatbot WHERE session_id = %s", (sid,))
@@ -352,7 +354,9 @@ class DatabaseService:
                 else:
                     cursor.execute("UPDATE chatbot_sesiones SET actualizado_en = NOW() WHERE session_id = %s", (sid,))
                 return True
-        except: return False
+        except Exception as ex:
+            print(f"[DB Error guardar_interaccion_chatbot] {ex}")
+            return False
 
     def borrar_sesion_chatbot(self, sid):
         try:

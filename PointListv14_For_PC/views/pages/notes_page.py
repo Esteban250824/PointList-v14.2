@@ -249,14 +249,124 @@ class NotesPage(BasePage):
         
         return chart
 
-    def _refresh_chart_view(self):
-        """Actualiza la gráfica principal."""
-        colors = self._get_theme_colors()
-        chart = self._create_bar_chart()
+    def _create_line_chart(self) -> ft.Control:
+        """Crea la gráfica de líneas (LineChart) de evolución del rendimiento por materia y general."""
+        notes = self._notas if self._notas else self.DEFAULT_NOTES
         
+        filter_subject = getattr(self, "chart_subject_filter", "General")
+        if filter_subject != "General":
+            notes = [n for n in notes if n.get("asignatura") == filter_subject]
+
+        if not notes:
+            return ft.Container(
+                alignment=ft.alignment.center,
+                height=180,
+                content=ft.Text(f"No hay notas suficientes para la gráfica de {filter_subject}", color="#64748B", size=13)
+            )
+
+        sorted_notes = sorted(notes, key=lambda x: str(x.get("fecha", "")))
+        data_points = []
+        labels = []
+        
+        for idx, n in enumerate(sorted_notes[-10:]):
+            val = float(n.get("calificacion", 0))
+            data_points.append(ft.LineChartDataPoint(x=idx, y=val))
+            lbl_text = n.get("asignatura", "")[:5] if filter_subject == "General" else str(n.get("fecha", ""))[-5:]
+            labels.append(
+                ft.ChartAxisLabel(
+                    idx,
+                    ft.Container(
+                        content=ft.Text(lbl_text, size=10, color="#475569", weight="bold"),
+                        alignment=ft.alignment.center
+                    )
+                )
+            )
+
+        line_data = ft.LineChartData(
+            data_points=data_points,
+            stroke_width=3,
+            color="#0284C7" if filter_subject != "General" else "#7C3AED",
+            curved=True,
+            stroke_cap_round=True,
+            below_line_bgcolor=ft.Colors.with_opacity(0.18, "#0284C7" if filter_subject != "General" else "#7C3AED")
+        )
+
+        return ft.LineChart(
+            data_series=[line_data],
+            border=ft.border.all(0, ft.Colors.TRANSPARENT),
+            left_axis=ft.ChartAxis(labels_size=24),
+            bottom_axis=ft.ChartAxis(labels=labels, labels_size=28),
+            min_y=0, max_y=5.0,
+            interactive=True,
+            expand=True,
+            horizontal_grid_lines=ft.ChartGridLines(color="#E2E8F0", width=1, interval=1)
+        )
+
+    def _refresh_chart_view(self):
+        """Actualiza la gráfica principal (Barras o Líneas por Materia / General)."""
+        colors = self._get_theme_colors()
+        curr_chart_type = getattr(self, "chart_type", "bar")
+        curr_subj = getattr(self, "chart_subject_filter", "General")
+
+        chart = self._create_line_chart() if curr_chart_type == "line" else self._create_bar_chart()
+        
+        def _set_chart_mode(mode: str):
+            self.chart_type = mode
+            self._refresh_chart_view()
+            try: self.chart_container.update()
+            except: pass
+
+        def _on_subject_select(e):
+            self.chart_subject_filter = e.control.value
+            self.chart_type = "line"
+            self._refresh_chart_view()
+            try: self.chart_container.update()
+            except: pass
+
+        subj_opts = [ft.dropdown.Option("General", text="📈 General (Evolución)")] + [
+            ft.dropdown.Option(s, text=f"📘 {s}") for s in self.SUBJECTS
+        ]
+
+        subj_dd = ft.Dropdown(
+            options=subj_opts,
+            value=curr_subj,
+            width=180,
+            height=36,
+            border_radius=8,
+            bgcolor=colors["surface"],
+            content_padding=ft.padding.symmetric(horizontal=8, vertical=2),
+            on_change=_on_subject_select
+        )
+
+        btn_bars = ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=6),
+            bgcolor="#7C3AED" if curr_chart_type == "bar" else colors["surface"],
+            border_radius=8,
+            border=ft.border.all(1, "#7C3AED" if curr_chart_type == "bar" else "#CBD5E1"),
+            ink=True,
+            on_click=lambda e: _set_chart_mode("bar"),
+            content=ft.Text("📊 Barras", size=12, weight="bold", color="white" if curr_chart_type == "bar" else colors["text"])
+        )
+
+        btn_line = ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=6),
+            bgcolor="#7C3AED" if curr_chart_type == "line" else colors["surface"],
+            border_radius=8,
+            border=ft.border.all(1, "#7C3AED" if curr_chart_type == "line" else "#CBD5E1"),
+            ink=True,
+            on_click=lambda e: _set_chart_mode("line"),
+            content=ft.Text("📈 Líneas de Progreso", size=12, weight="bold", color="white" if curr_chart_type == "line" else colors["text"])
+        )
+
         self.chart_container.content = ft.Container(
             content=ft.Column([
-                ft.Text("Promedio por asignatura", size=16, weight="bold", color="#0F172A"),
+                ft.Row([
+                    ft.Text("Rendimiento Académico", size=16, weight="bold", color="#0F172A"),
+                    ft.Container(expand=True),
+                    subj_dd,
+                    btn_bars,
+                    btn_line,
+                ], vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=8),
                 ft.Container(height=10),
                 ft.Container(content=chart, height=220, expand=True)
             ], spacing=0),
