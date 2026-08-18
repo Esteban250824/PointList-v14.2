@@ -356,6 +356,7 @@ class NavigationController:
         from views.pages.messaging_page import MessagingPage
         from views.pages.profile_page import UserProfilePage
         from views.pages.chatbot_page import ChatBotPage
+        from views.pages.assignments_page import AssignmentsPage
         from views.pages.flashcards_page import FlashcardsPage
         from views.pages.pomodoro_page import PomodoroPage
 
