@@ -539,6 +539,12 @@ class ChatBotPage(BasePage):
                 ),
                 ft.Container(height=4),
                 ft.Row([
+                    ft.TextButton(
+                        "🎙️ Escuchar Audio (NotebookLM)",
+                        style=ft.ButtonStyle(color="#0284C7"),
+                        on_click=lambda e, t=text: self._show_info("🎙️ Generando resumen en audio NotebookLM para esta respuesta...")
+                    ),
+                    ft.Container(expand=True),
                     ft.IconButton(icon=ft.Icons.THUMB_UP_OUTLINE, icon_size=16, icon_color="#64748B"),
                     ft.IconButton(icon=ft.Icons.THUMB_DOWN_OUTLINE, icon_size=16, icon_color="#64748B"),
                 ], spacing=2, alignment=ft.MainAxisAlignment.END)

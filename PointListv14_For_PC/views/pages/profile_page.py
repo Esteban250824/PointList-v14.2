@@ -153,6 +153,7 @@ class UserProfilePage(BasePage):
             shadow=ft.BoxShadow(blur_radius=12, spread_radius=-2, color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK)),
             content=ft.Row([
                 build_pill_tab("perfil", self.translate("profile_tab_perfil"), ft.Icons.PERSON_OUTLINE),
+                build_pill_tab("logros", "Logros & Insignias", ft.Icons.EMOJI_EVENTS_OUTLINED),
                 build_pill_tab("seguridad", self.translate("profile_tab_seguridad"), ft.Icons.SHIELD_OUTLINED),
                 build_pill_tab("ajustes", self.translate("profile_tab_ajustes"), ft.Icons.SETTINGS_OUTLINED),
                 build_pill_tab("actividad", self.translate("profile_tab_actividad"), ft.Icons.ACCESS_TIME),
@@ -197,6 +198,34 @@ class UserProfilePage(BasePage):
                         on_click=self._save_profile,
                     ),
                 ]),
+            ], spacing=0)
+
+        elif self.active_tab == "logros":
+            def build_badge(title, desc, icon, color, bg):
+                return ft.Container(
+                    padding=16, bgcolor=bg, border_radius=16, border=ft.border.all(1, color), expand=True,
+                    content=ft.Row([
+                        ft.Icon(icon, color=color, size=28),
+                        ft.Column([
+                            ft.Text(title, size=14, weight="bold", color=colors["text"]),
+                            ft.Text(desc, size=11, color=colors["text_secondary"]),
+                        ], spacing=2, expand=True)
+                    ], spacing=10)
+                )
+
+            return ft.Column([
+                ft.Text("🏆 Insignias de Rendimiento Escolar & Racha", size=18, weight="bold", color=colors["text"]),
+                ft.Text("Completa tareas y estudia con Pomodoro para desbloquear nuevos reconocimientos:", size=12, color=colors["text_secondary"]),
+                ft.Container(height=16),
+                ft.Row([
+                    build_badge("⚡ Estudiante Jolteon", "Navegación y estudio a máxima velocidad (0ms).", ft.Icons.BOLT, "#D97706", "#FEF3C7"),
+                    build_badge("⏱️ Maestro Pomodoro", "Más de 50 bloques de concentración completados.", ft.Icons.TIMER, "#EA580C", "#FFEDD5"),
+                ], spacing=12),
+                ft.Container(height=12),
+                ft.Row([
+                    build_badge("🤖 Explorador IA PointBit", "Más de 20 mapas mentales y flashcards generadas.", ft.Icons.AUTO_AWESOME, "#0284C7", "#E0F2FE"),
+                    build_badge("📚 Promedio Sobresaliente", "Promedio académico sostenido superior a 4.5.", ft.Icons.STAR, "#16A34A", "#DCFCE7"),
+                ], spacing=12),
             ], spacing=0)
 
         elif self.active_tab == "seguridad":

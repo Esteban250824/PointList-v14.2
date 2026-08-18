@@ -621,22 +621,68 @@ class AssignmentsPage(BasePage):
             except Exception as ex:
                 self._show_info(f"⚠️ Error al sincronizar: {str(ex)}")
 
-        # Action Button para Profesor
-        create_btn = ft.ElevatedButton(
-            "➕ Crear Tarea",
-            bgcolor="#7C3AED",
-            color=ft.Colors.WHITE,
-            height=38,
-            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-            on_click=self._open_create_assignment_dialog,
-        ) if self._is_profesor else ft.ElevatedButton(
-            "📅 Sincronizar Google Calendar",
-            bgcolor="#0284C7",
-            color=ft.Colors.WHITE,
-            height=38,
-            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-            on_click=lambda e: _sync_gcal(self._assignments[0] if self._assignments else {}),
-        )
+        def _open_grade_calculator_modal(e=None):
+            val_f = ft.TextField(label="Nota Actual (1.0 - 5.0)", value="4.2", border_radius=10)
+            target_f = ft.TextField(label="Nota Objetivo Deseada", value="4.8", border_radius=10)
+            result_txt = ft.Text("Se requiere obtener mínimo 4.9 en las tareas restantes.", size=13, weight="bold", color="#0284C7")
+
+            def _recalc(e):
+                try:
+                    curr = float(val_f.value)
+                    targ = float(target_f.value)
+                    needed = round((targ * 2) - curr, 1)
+                    if needed > 5.0:
+                        result_txt.value = f"⚠️ Se necesitaría {needed} (supera 5.0). ¡Empieza con repasos Pomodoro!"
+                        result_txt.color = "#DC2626"
+                    else:
+                        result_txt.value = f"🎯 ¡Necesitas sacar {max(1.0, needed)} en la siguiente entrega para alcanzar {targ}!"
+                        result_txt.color = "#16A34A"
+                except:
+                    result_txt.value = "Ingresa números válidos."
+                try: self.page.update()
+                except: pass
+
+            val_f.on_change = _recalc
+            target_f.on_change = _recalc
+
+            calc_dlg = ft.AlertDialog(
+                modal=True,
+                title=ft.Row([ft.Icon(ft.Icons.CALCULATE, color="#0284C7"), ft.Text("Predictor de Nota Objetivo", size=16, weight="bold")]),
+                content=ft.Column([
+                    ft.Text("Calcula la calificación exacta que necesitas en tus próximas asignaciones:"),
+                    ft.Container(height=8),
+                    val_f,
+                    target_f,
+                    ft.Container(height=8),
+                    result_txt
+                ], spacing=6, tight=True),
+                actions=[
+                    ft.ElevatedButton("Entendido", bgcolor="#0284C7", color="white", on_click=lambda e: self.page.close(calc_dlg))
+                ]
+            )
+            self.page.open(calc_dlg)
+
+        # Action Buttons para Profesor / Estudiante
+        calc_btn = ft.OutlinedButton("📊 Predictor de Notas", height=38, on_click=_open_grade_calculator_modal)
+
+        create_btn = ft.Row([
+            calc_btn,
+            ft.ElevatedButton(
+                "➕ Crear Tarea",
+                bgcolor="#7C3AED",
+                color=ft.Colors.WHITE,
+                height=38,
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                on_click=self._open_create_assignment_dialog,
+            ) if self._is_profesor else ft.ElevatedButton(
+                "📅 Sincronizar Google Calendar",
+                bgcolor="#0284C7",
+                color=ft.Colors.WHITE,
+                height=38,
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                on_click=lambda e: _sync_gcal(self._assignments[0] if self._assignments else {}),
+            )
+        ], spacing=8)
 
         # Filtros de estado (Todas, Pendientes, Entregadas, Calificadas)
         def _set_filter(st):
