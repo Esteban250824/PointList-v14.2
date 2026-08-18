@@ -331,10 +331,8 @@ class NotesPage(BasePage):
             options=subj_opts,
             value=curr_subj,
             width=180,
-            height=36,
             border_radius=8,
             bgcolor=colors["surface"],
-            content_padding=ft.padding.symmetric(horizontal=8, vertical=2),
             on_change=_on_subject_select
         )
 

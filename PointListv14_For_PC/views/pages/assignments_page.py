@@ -256,10 +256,8 @@ class AssignmentsPage(BasePage):
             options=subject_options,
             value=self._filter_subject,
             width=210,
-            height=40,
             border_radius=10,
             bgcolor=colors["surface"],
-            content_padding=ft.padding.symmetric(horizontal=10, vertical=4),
             on_change=_on_subject_change
         )
 
