@@ -241,34 +241,69 @@ class ChatBotService:
         else:
             current_history = self._conversation_history
 
+    def _call_gemini_text(self, messages: list, max_tokens: int = 2000) -> Optional[str]:
+        """Fallback a Google Gemini 2.0 Flash para texto si el modelo de Groq no está disponible."""
+        api_key = get_gemini_api_key()
+        if not api_key:
+            return None
+
+        try:
+            full_prompt = "\n".join([f"{m['role'].upper()}: {m['content']}" for m in messages])
+            models_to_try = [get_gemini_model(), "gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"]
+            for model in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                payload = {
+                    "contents": [{"parts": [{"text": full_prompt}]}]
+                }
+                resp = requests.post(url, json=payload, timeout=25)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            return parts[0].get("text", "")
+        except Exception as ex:
+            print(f"[ChatBot Gemini Text Fallback Error] {ex}")
+        return None
+
         current_history.append({"role": "user", "content": user_message})
         messages = [{"role": "system", "content": custom_system_prompt}] + current_history[-10:]
 
-        try:
-            response = self._groq_client.chat.completions.create(
-                model=get_groq_model(),
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=0.7,
-                stream=False,
-            )
+        models_to_try = [get_groq_model(), "llama-3.3-70b-specdec", "llama3-70b-8192", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
+        assistant_message = None
 
-            assistant_message = response.choices[0].message.content
+        if self._groq_client:
+            for model in models_to_try:
+                try:
+                    response = self._groq_client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        max_tokens=max_tokens,
+                        temperature=0.7,
+                        stream=False,
+                    )
+                    assistant_message = response.choices[0].message.content
+                    if assistant_message:
+                        break
+                except Exception as e:
+                    print(f"[ChatBot] Modelo Groq '{model}' no disponible, probando fallback...")
+                    continue
 
+        if not assistant_message and self._gemini_available:
+            print("[ChatBot] Usando Google Gemini 2.0 Flash como motor principal de respuesta...")
+            assistant_message = self._call_gemini_text(messages, max_tokens)
+
+        if assistant_message:
             self._conversation_history.append({
                 "role": "assistant",
                 "content": assistant_message,
             })
-
             if len(self._conversation_history) > 20:
                 self._conversation_history = self._conversation_history[-20:]
-
             return assistant_message
 
-        except Exception as e:
-            error_msg = f"Error al comunicarse con Groq: {str(e)}"
-            print(f"[ChatBot] {error_msg}")
-            return f"⚠️ {error_msg}\n\nPor favor, verifica tu conexión a internet y las claves de API."
+        return self._demo_response(user_message)
 
     def _demo_response(self, user_message: str) -> str:
         """Respuesta de demostración si no hay claves de API en .env."""
