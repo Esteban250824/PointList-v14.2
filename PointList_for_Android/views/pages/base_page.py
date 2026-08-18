@@ -252,10 +252,16 @@ class BasePage:
                             on_click=lambda _: _nav("Tecnicas"),
                         ),
                         ft.ListTile(
+                            leading=ft.Icon(ft.Icons.ASSIGNMENT_OUTLINED, color=self.primary_color),
+                            title=ft.Text(self.translate("nav_assignments"), weight="bold", color=colors["text"]),
+                            on_click=lambda _: _nav("Asignaciones"),
+                        ),
+                        ft.ListTile(
                             leading=ft.Icon(ft.Icons.CHAT_OUTLINED, color=self.primary_color),
                             title=ft.Text(self.translate("nav_messaging"), weight="bold", color=colors["text"]),
                             on_click=lambda _: _nav("Mensajeria"),
                         ),
+
                         ft.ListTile(
                             leading=ft.Icon(ft.Icons.SMART_TOY_OUTLINED, color=self.primary_color),
                             title=ft.Text(self.translate("nav_chatbot"), weight="bold", color=colors["text"]),

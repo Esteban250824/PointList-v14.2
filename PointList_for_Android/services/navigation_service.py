@@ -12,9 +12,9 @@ class NavigationController:
     
     # Sistema de Caché Global Ultra-Rápido
     cache = {
-        "notes": [],
-        "events": [],
-        "tecnicas": [],
+        "notes": None,
+        "events": None,
+        "tecnicas": None,
         "user_config": {},
         "messages": {},      # {contact_id: [messages]}
         "contacts": [],
@@ -36,19 +36,17 @@ class NavigationController:
         
         # Sincronización en segundo plano optimizada
         def background_sync():
-            time.sleep(2)  # Inicio más rápido
+            time.sleep(2)
             while True:
                 try:
                     user = cls.get_current_user()
                     if user and user.get("id"):
                         uid = user["id"]
                         from services.database_service import db
-                        # Latido de "En línea"
                         db.actualizar_ultimo_acceso(uid)
-                        # Sincronización de datos en background
                         cls.preload_data(background=True)
                 except: pass
-                time.sleep(8)  # Sincronizar cada 8 segundos para "tiempo real"
+                time.sleep(12)
                 
         threading.Thread(target=background_sync, daemon=True).start()
 
@@ -67,6 +65,7 @@ class NavigationController:
                 from views.pages.messaging_page import MessagingPage
                 from views.pages.profile_page import UserProfilePage
                 from views.pages.chatbot_page import ChatBotPage
+                from views.pages.assignments_page import AssignmentsPage
 
                 pages = {
                     "Login": LoginPage,
@@ -74,6 +73,7 @@ class NavigationController:
                     "Recuperar": RecuperarContrasenaPage,
                     "Inicio": HomePage,
                     "Notas": NotesPage,
+                    "Asignaciones": AssignmentsPage,
                     "Calendario": CalendarPage,
                     "Tecnicas": StudyMethodsPage,
                     "Mensajeria": MessagingPage,
@@ -83,18 +83,6 @@ class NavigationController:
 
                 for name, cls_page in pages.items():
                     cls.page_classes[name] = cls_page
-
-                # Precargar e instanciar contenidos en memoria para cambio de vista ultra instantáneo (0ms)
-                if cls.page:
-                    for name in ["Inicio", "ChatBot", "Mensajeria", "Notas", "Calendario", "Tecnicas", "Perfil"]:
-                        if name not in cls.page_instances:
-                            try:
-                                page_cls = pages[name]
-                                inst = page_cls(cls.page)
-                                cls.page_instances[name] = inst
-                                cls.page_contents[name] = inst.build()
-                            except Exception:
-                                pass
             except:
                 pass
 
@@ -121,7 +109,6 @@ class NavigationController:
         """Carga datos sin bloquear la UI con paralelismo optimizado."""
         if cls.cache["is_preloading"]: return
         
-        # Evitar re-sincronizaciones frecuentes si fue sincronizado hace menos de 5 segundos
         now = datetime.now()
         if cls.cache.get("last_sync") and (now - cls.cache["last_sync"]).total_seconds() < 5:
             return
@@ -133,7 +120,6 @@ class NavigationController:
                 user = cls.get_current_user()
                 uid = user.get("id")
                 if uid:
-                    # Funciones de carga paralela
                     def load_notes():
                         try:
                             cls.cache["notes"] = db.obtener_notas(uid) or []
@@ -159,19 +145,12 @@ class NavigationController:
                             cls.cache["online_users"] = db.obtener_usuarios_online() or []
                         except: pass
 
-                    def load_chatbot():
-                        try:
-                            cls.cache["chatbot_sessions"] = db.obtener_sesiones_chatbot(uid) or []
-                        except: pass
-
-                    # Ejecutar cargas principales en paralelo
                     threads = [
                         threading.Thread(target=load_notes, daemon=True),
                         threading.Thread(target=load_events, daemon=True),
                         threading.Thread(target=load_tecnicas, daemon=True),
                         threading.Thread(target=load_contacts, daemon=True),
                         threading.Thread(target=load_online_users, daemon=True),
-                        threading.Thread(target=load_chatbot, daemon=True),
                     ]
 
                     for thread in threads:
@@ -240,84 +219,48 @@ class NavigationController:
         cls._apply_page_theme(dark)
 
     @classmethod
-    def change_language(cls, lang_code: str):
-        """Cambia idioma de forma inmediata, persiste y reconstruye la vista actual."""
-        if not cls.page or lang_code not in ("es", "en", "pt", "it", "de", "fr", "zh", "zh-TW"):
-            return
-
-        cls.cache["language"] = lang_code
-        try:
-            cls.page.client_storage.set("language", lang_code)
-        except:
-            pass
-
-        user = cls.get_current_user()
-        if user and user.get("id"):
-            def save_task():
-                try:
-                    from services.database_service import db
-                    db.actualizar_configuracion(user["id"], {"idioma": lang_code})
-                except:
-                    pass
-            threading.Thread(target=save_task, daemon=True).start()
-
-        cls.reload_current_view(show_message="language")
-
-    @classmethod
-    def change_theme(cls, dark: bool):
-        """Cambia tema, persiste y reconstruye la vista actual."""
-        if not cls.page:
-            return
-
-        cls._apply_page_theme(dark)
-        user = cls.get_current_user()
-        if user and user.get("id"):
-            def save_task():
-                try:
-                    from services.database_service import db
-                    db.actualizar_configuracion(user["id"], {"tema": "oscuro" if dark else "claro"})
-                except:
-                    pass
-            threading.Thread(target=save_task, daemon=True).start()
-
-        cls.reload_current_view(show_message="theme")
-
-    @classmethod
-    def reload_current_view(cls, show_message: str = None):
-        """Reconstruye la pantalla actual (útil tras cambiar tema o idioma)."""
-        if cls.current_view_name:
-            cls.page_instances.clear()
-            cls.page_contents.clear()
-            cls.update_view(cls.current_view_name, force_rebuild=True)
-            if show_message and cls.current_page_instance:
-                try:
-                    if show_message == "language":
-                        cls.current_page_instance._show_success(
-                            cls.current_page_instance.translate("msg_language_changed")
-                        )
-                    elif show_message == "theme":
-                        cls.current_page_instance._show_success(
-                            cls.current_page_instance.translate("msg_theme_changed")
-                        )
-                except:
-                    pass
-
-    @classmethod
-    def logout(cls):
-        """Cierra la sesión del usuario y limpia el caché."""
+    def clear_user_session(cls):
+        """Limpia todo el caché, datos de usuario, y destruye las instancias de páginas para garantizar una sesión 100% limpia sin estancamiento."""
+        cls.cache["current_user"] = None
+        cls.cache["notes"] = None
+        cls.cache["events"] = None
+        cls.cache["tecnicas"] = None
+        cls.cache["user_config"] = {}
+        cls.cache["messages"] = {}
+        cls.cache["contacts"] = []
+        cls.cache["online_users"] = []
+        cls.cache["chatbot_sessions"] = []
+        cls.cache["last_sync"] = None
+        cls.page_instances.clear()
+        cls.page_contents.clear()
         if cls.page:
             try:
                 cls.page.client_storage.remove("current_user")
-                cls.cache["current_user"] = None
-                cls.cache["notes"] = []
-                cls.cache["events"] = []
-                cls.cache["messages"] = {}
-                cls.update_view("Login")
-            except: pass
+            except:
+                pass
+
+    @classmethod
+    def logout(cls):
+        """Cierra la sesión del usuario y limpia el caché 100%."""
+        cls.clear_user_session()
+        cls.update_view("Login", force_rebuild=True)
+
+    @classmethod
+    def set_user_and_navigate(cls, user_data: dict, target_view: str = "Inicio"):
+        """Establece la nueva sesión del usuario de forma atómica y navega a la vista objetivo sin retrasos."""
+        cls.clear_user_session()
+        cls.cache["current_user"] = user_data
+        if cls.page:
+            try:
+                cls.page.client_storage.set("current_user", user_data)
+            except:
+                pass
+        cls.apply_user_preferences()
+        cls.update_view(target_view, force_rebuild=True)
+        threading.Thread(target=cls.preload_data, daemon=True).start()
 
     @classmethod
     def update_view(cls, view_name: str, data=None, force_rebuild: bool = False):
-        # Importaciones Lazy
         from views.pages.login_page import LoginPage
         from views.pages.registration_page import RegistrationPage
         from views.pages.recover_page import RecuperarContrasenaPage
@@ -328,6 +271,7 @@ class NavigationController:
         from views.pages.messaging_page import MessagingPage
         from views.pages.profile_page import UserProfilePage
         from views.pages.chatbot_page import ChatBotPage
+        from views.pages.assignments_page import AssignmentsPage
 
         view_map = {
             "Login": LoginPage,
@@ -335,6 +279,7 @@ class NavigationController:
             "Recuperar": RecuperarContrasenaPage,
             "Inicio": HomePage,
             "Notas": NotesPage,
+            "Asignaciones": AssignmentsPage,
             "Calendario": CalendarPage,
             "Tecnicas": StudyMethodsPage,
             "Mensajeria": MessagingPage,
@@ -360,5 +305,4 @@ class NavigationController:
         except:
             pass
 
-        # Precargar datos en el fondo después de cambiar de vista para la siguiente
         cls.preload_data(background=True)

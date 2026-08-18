@@ -69,6 +69,9 @@ class NavigationController:
                 from views.pages.chatbot_page import ChatBotPage
                 from views.pages.assignments_page import AssignmentsPage
 
+                from views.pages.flashcards_page import FlashcardsPage
+                from views.pages.pomodoro_page import PomodoroPage
+
                 pages = {
                     "Login": LoginPage,
                     "Registro": RegistrationPage,
@@ -81,6 +84,8 @@ class NavigationController:
                     "Mensajeria": MessagingPage,
                     "Perfil": UserProfilePage,
                     "ChatBot": ChatBotPage,
+                    "Flashcards": FlashcardsPage,
+                    "Pomodoro": PomodoroPage,
                 }
 
                 for name, cls_page in pages.items():
@@ -298,17 +303,45 @@ class NavigationController:
                     pass
 
     @classmethod
-    def logout(cls):
-        """Cierra la sesión del usuario y limpia el caché."""
+    def clear_user_session(cls):
+        """Limpia todo el caché, datos de usuario, y destruye las instancias de páginas para garantizar una sesión 100% limpia sin estancamiento."""
+        cls.cache["current_user"] = None
+        cls.cache["notes"] = None
+        cls.cache["events"] = None
+        cls.cache["tecnicas"] = None
+        cls.cache["user_config"] = {}
+        cls.cache["messages"] = {}
+        cls.cache["contacts"] = []
+        cls.cache["online_users"] = []
+        cls.cache["chatbot_sessions"] = []
+        cls.cache["last_sync"] = None
+        cls.page_instances.clear()
+        cls.page_contents.clear()
         if cls.page:
             try:
                 cls.page.client_storage.remove("current_user")
-                cls.cache["current_user"] = None
-                cls.cache["notes"] = []
-                cls.cache["events"] = []
-                cls.cache["messages"] = {}
-                cls.update_view("Login")
-            except: pass
+            except:
+                pass
+
+    @classmethod
+    def logout(cls):
+        """Cierra la sesión del usuario y limpia el caché 100%."""
+        cls.clear_user_session()
+        cls.update_view("Login", force_rebuild=True)
+
+    @classmethod
+    def set_user_and_navigate(cls, user_data: dict, target_view: str = "Inicio"):
+        """Establece la nueva sesión del usuario de forma atómica y navega a la vista objetivo sin retrasos."""
+        cls.clear_user_session()
+        cls.cache["current_user"] = user_data
+        if cls.page:
+            try:
+                cls.page.client_storage.set("current_user", user_data)
+            except:
+                pass
+        cls.apply_user_preferences()
+        cls.update_view(target_view, force_rebuild=True)
+        threading.Thread(target=cls.preload_data, daemon=True).start()
 
     @classmethod
     def update_view(cls, view_name: str, data=None, force_rebuild: bool = False):
@@ -323,7 +356,8 @@ class NavigationController:
         from views.pages.messaging_page import MessagingPage
         from views.pages.profile_page import UserProfilePage
         from views.pages.chatbot_page import ChatBotPage
-        from views.pages.assignments_page import AssignmentsPage
+        from views.pages.flashcards_page import FlashcardsPage
+        from views.pages.pomodoro_page import PomodoroPage
 
         view_map = {
             "Login": LoginPage,
@@ -337,6 +371,8 @@ class NavigationController:
             "Mensajeria": MessagingPage,
             "Perfil": UserProfilePage,
             "ChatBot": ChatBotPage,
+            "Flashcards": FlashcardsPage,
+            "Pomodoro": PomodoroPage,
         }
 
         cls.current_view_name = view_name

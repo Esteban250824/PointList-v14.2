@@ -1,6 +1,6 @@
 """
 services/google_service.py
-PointList v0.14.28
+PointList v0.14.28 (For Android)
 Servicio de Integración con los Servicios Oficiales de Google:
 1. Google Sign-In & OAuth 2.0 (Verificación de Correo Electrónico)
 2. Google Calendar API (Sincronización de tareas y horarios)
@@ -36,17 +36,17 @@ class GoogleIntegrationService:
         self.custom_smtp_pass = password.strip()
         self.custom_smtp_server = server.strip()
         self.custom_smtp_port = int(port)
-        print(f"[Google Auth] Servidor SMTP configurado dinámicamente en tiempo de ejecución para: {email}")
+        print(f"[Google Auth] Servidor SMTP configurado dinámicamente para: {email}")
 
     def _send_real_email_via_smtp(self, recipient_email: str, otp_code: str):
-        """Envía un correo electrónico REAL con el código de verificación OTP usando SMTP (Gmail / SendGrid)."""
+        """Envía un correo electrónico REAL con el código de verificación OTP usando SMTP (Gmail)."""
         smtp_email = getattr(self, "custom_smtp_email", "") or os.getenv("SMTP_EMAIL", "")
         smtp_pass = getattr(self, "custom_smtp_pass", "") or os.getenv("SMTP_PASSWORD", "")
         smtp_server = getattr(self, "custom_smtp_server", "") or os.getenv("SMTP_SERVER", "smtp.gmail.com")
         smtp_port = getattr(self, "custom_smtp_port", 587) or int(os.getenv("SMTP_PORT", "587"))
 
         if not smtp_email or not smtp_pass:
-            print(f"[SMTP Notice] No se configuró SMTP_EMAIL ni SMTP_PASSWORD en el archivo .env o en tiempo de ejecución.")
+            print(f"[SMTP Notice] No se configuró SMTP_EMAIL ni SMTP_PASSWORD en .env.")
             print(f"[Google Auth Real Email Simulation] Para: {recipient_email} | Código OTP: {otp_code}")
             return False
 
@@ -94,7 +94,7 @@ class GoogleIntegrationService:
         import time
         self._verification_codes[clean_email] = {
             "code": otp,
-            "expires_at": time.time() + 600 # Válido por 10 minutos
+            "expires_at": time.time() + 600
         }
         print(f"[Google Auth] Código de Verificación para {clean_email}: {otp}")
         self._send_real_email_via_smtp(clean_email, otp)
@@ -118,10 +118,10 @@ class GoogleIntegrationService:
 
         return False
 
-    # ─── 2. GOOGLE SIGN-IN / OAUTH 2.0 ─────────────────────────────────────────
+    # ─── 2. GOOGLE SIGN-IN / OAUTH 2.0 (ANDROID & WEB) ────────────────────────
     @staticmethod
     def get_saved_google_accounts() -> list[dict]:
-        """Devuelve la lista de cuentas de Google detectadas en el sistema para el selector oficial de cuentas."""
+        """Devuelve la lista de cuentas de Google detectadas en el sistema."""
         return [
             {
                 "name": "JUAN GARCES",
@@ -147,14 +147,14 @@ class GoogleIntegrationService:
         ]
 
     def get_real_google_oauth_url(self) -> str:
-        """Construye la URL auténtica de Google OAuth 2.0 para Aplicación de Escritorio de los servidores de Google."""
-        client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+        """Construye la URL auténtica de Google OAuth 2.0 con el Client ID de Android / Web."""
+        client_id = os.getenv("GOOGLE_ANDROID_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID", "")
         redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8555/oauth_callback")
         scope = "openid%20email%20profile"
         return f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scope}&prompt=select_account"
 
     def _start_callback_http_server(self):
-        """Inicia un servidor HTTP liviano en segundo plano (Puerto 8555) exclusivo para recibir la respuesta de Google."""
+        """Inicia un servidor HTTP liviano en puerto 8555 exclusivo para recibir la respuesta de Google."""
         if getattr(self, "_server_running", False):
             return
 
@@ -223,9 +223,7 @@ class GoogleIntegrationService:
                             g_name = profile_res["name"]
                             g_pic = profile_res.get("picture")
 
-                            # Registro y consulta ultra rápida (<50ms) en Supabase
                             user_res = db.obtener_o_crear_usuario_google(g_email, g_name, g_pic)
-
                             if user_res["ok"]:
                                 user = user_res["usuario"]
                                 current_user_data = {
@@ -256,7 +254,7 @@ class GoogleIntegrationService:
         threading.Thread(target=_run_server, daemon=True).start()
 
     def launch_real_google_oauth(self, page=None) -> str:
-        """Abre el navegador web predeterminado (Chrome/Edge) en la página REAL de Google OAuth 2.0 (accounts.google.com)."""
+        """Abre el navegador web predeterminado en la página REAL de Google OAuth 2.0 (accounts.google.com)."""
         import webbrowser
         self._start_callback_http_server()
         url = self.get_real_google_oauth_url()
@@ -273,9 +271,9 @@ class GoogleIntegrationService:
 
     def exchange_code_for_google_profile(self, code: str) -> dict:
         """Intercambia el código de autorización devuelto por Google por el perfil real del usuario (Email, Nombre, Foto)."""
-        client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+        client_id = os.getenv("GOOGLE_ANDROID_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID", "")
         client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8555/oauth_callback")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8555/oauth_callback")
 
         token_url = "https://oauth2.googleapis.com/token"
         payload = {
@@ -316,9 +314,7 @@ class GoogleIntegrationService:
             return {"ok": False, "error": str(ex)}
 
     def authenticate_with_google(self, email_hint: str = None) -> dict:
-        """
-        Autentica o sincroniza el perfil oficial de la cuenta de Google del estudiante.
-        """
+        """Autentica o sincroniza el perfil oficial de la cuenta de Google del estudiante."""
         email = (email_hint or "juan24gr25@gmail.com").strip().lower()
         raw_name = email.split("@")[0].replace(".", " ").replace("_", " ").title()
         name = "JUAN GARCES" if "juan" in raw_name.lower() else ("Esteban" if "esteban" in raw_name.lower() else raw_name)
@@ -331,71 +327,5 @@ class GoogleIntegrationService:
             "provider": "google.com",
             "photo_url": "https://lh3.googleusercontent.com/a/default-user=s96-c"
         }
-
-    # ─── 3. GOOGLE CALENDAR API ────────────────────────────────────────────────
-    def sync_to_google_calendar(self, title: str, due_date: str, description: str = "") -> dict:
-        """Sincroniza una tarea o sesión Pomodoro con Google Calendar."""
-        if not title:
-            return {"ok": False, "error": "El título del evento es obligatorio."}
-
-        print(f"[Google Calendar API] Evento sincronizado: '{title}' para la fecha {due_date}")
-        return {
-            "ok": True,
-            "event_id": f"gcal_{random.randint(10000, 99999)}",
-            "title": title,
-            "due_date": due_date,
-            "status": "confirmed",
-            "calendar_url": "https://calendar.google.com"
-        }
-
-    # ─── 4. GOOGLE DRIVE & CLASSROOM API ──────────────────────────────────────
-    def import_from_google_drive(self, search_query: str = "") -> list[dict]:
-        """Obtiene la lista de documentos y PDFs desde Google Drive del estudiante."""
-        return [
-            {
-                "id": "gdrive_001",
-                "name": "Guía_Fotosíntesis_Biología_2026.pdf",
-                "mimeType": "application/pdf",
-                "size": "2.4 MB",
-                "icon": "📄",
-                "source": "Google Drive"
-            },
-            {
-                "id": "gdrive_002",
-                "name": "Apuntes_Revolución_Francesa_Historia.docx",
-                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "size": "1.1 MB",
-                "icon": "📝",
-                "source": "Google Drive"
-            },
-            {
-                "id": "gdrive_003",
-                "name": "Ejercicios_Geometría_Analítica.pdf",
-                "mimeType": "application/pdf",
-                "size": "3.8 MB",
-                "icon": "📄",
-                "source": "Google Drive"
-            }
-        ]
-
-    def import_from_google_classroom(self) -> list[dict]:
-        """Obtiene las tareas y materias pendientes asignadas en Google Classroom."""
-        return [
-            {
-                "id": "class_101",
-                "course": "Biología General",
-                "assignment": "Informe sobre Respiración Celular",
-                "due_date": "2026-08-20",
-                "source": "Google Classroom"
-            },
-            {
-                "id": "class_102",
-                "course": "Historia Universal",
-                "assignment": "Ensayo de la Guerra Fría",
-                "due_date": "2026-08-25",
-                "source": "Google Classroom"
-            }
-        ]
-
 
 google_service = GoogleIntegrationService()

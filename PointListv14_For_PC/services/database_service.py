@@ -150,6 +150,48 @@ class DatabaseService:
                 return {"ok": True, "usuario": {"id": uid, "nombre_usuario": nombre, "email": email, "rol": rol}}
         except Exception as e: return {"ok": False, "error": str(e)}
 
+    def obtener_o_crear_usuario_google(self, email: str, nombre: str, photo_url: str = None):
+        """Obtiene o registra un usuario de Google OAuth en 1 sola consulta SQL instantánea (< 50ms) sin bcrypt ralentizado."""
+        clean_email = (email or "").strip().lower()
+        clean_name = (nombre or clean_email.split("@")[0]).strip()
+        p_url = photo_url or "https://lh3.googleusercontent.com/a/default-user=s96-c"
+
+        try:
+            with self._get_cursor() as cursor:
+                cursor.execute(
+                    "SELECT id, nombre_usuario, email, photo_url, rol, bio, telefono, ubicacion, sitio_web FROM usuarios WHERE email = %s",
+                    (clean_email,)
+                )
+                u = cursor.fetchone()
+                if u:
+                    return {
+                        "ok": True,
+                        "usuario": {
+                            "id": u[0], "nombre_usuario": u[1], "email": u[2], "photo_url": u[3] or p_url,
+                            "rol": u[4] or "estudiante", "bio": u[5] or "", "telefono": u[6] or "",
+                            "ubicacion": u[7] or "", "sitio_web": u[8] or ""
+                        }
+                    }
+
+                cursor.execute(
+                    "INSERT INTO usuarios (nombre_usuario, email, password_hash, salt, photo_url, rol) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                    (clean_name, clean_email, "GOOGLE_OAUTH_USER", "OAUTH_SALT", p_url, "estudiante")
+                )
+                uid = cursor.fetchone()[0]
+                try:
+                    cursor.execute("INSERT INTO configuracion_usuario (usuario_id) VALUES (%s) ON CONFLICT DO NOTHING", (uid,))
+                except: pass
+
+                return {
+                    "ok": True,
+                    "usuario": {
+                        "id": uid, "nombre_usuario": clean_name, "email": clean_email, "photo_url": p_url,
+                        "rol": "estudiante", "bio": "", "telefono": "", "ubicacion": "", "sitio_web": ""
+                    }
+                }
+        except Exception as ex:
+            return {"ok": False, "error": str(ex)}
+
     def actualizar_perfil(self, uid, datos):
         try:
             with self._get_cursor() as cursor:

@@ -44,6 +44,15 @@ class I18n:
             "de": "Techniken",
             "zh": "学习技巧",
         },
+        "nav_assignments": {
+            "es": "Asignaciones",
+            "en": "Assignments",
+            "pt": "Tarefas",
+            "it": "Compiti",
+            "de": "Aufgaben",
+            "zh": "作业",
+        },
+
         "nav_messaging": {
             "es": "Mensajería",
             "en": "Messaging",

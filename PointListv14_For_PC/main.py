@@ -45,6 +45,51 @@ def main(page: ft.Page):
     main_container.content = loading_screen
     page.update()
 
+    def handle_route_change(e):
+        route = page.route or ""
+        if "oauth_callback" in route or "code=" in route:
+            try:
+                import urllib.parse
+                parsed = urllib.parse.urlparse(route)
+                params = urllib.parse.parse_qs(parsed.query)
+                code_list = params.get("code") or params.get("/oauth_callback?code")
+                code = code_list[0] if code_list else None
+                
+                if code:
+                    from services.google_service import google_service
+                    from services.database_service import db
+                    
+                    profile_res = google_service.exchange_code_for_google_profile(code)
+                    if profile_res["ok"]:
+                        g_email = profile_res["email"]
+                        g_name = profile_res["name"]
+                        
+                        user_res = db.autenticar_usuario(g_email, "google_oauth_pass_2026")
+                        if not user_res["ok"]:
+                            db.crear_usuario(g_name, g_email, "google_oauth_pass_2026", rol="estudiante")
+                            user_res = db.autenticar_usuario(g_email, "google_oauth_pass_2026")
+
+                        if user_res["ok"]:
+                            user = user_res["usuario"]
+                            current_user_data = {
+                                "id": user.get("id"),
+                                "name": user.get("nombre_usuario", g_name),
+                                "email": g_email,
+                                "photo_url": profile_res.get("picture"),
+                                "rol": user.get("rol", "estudiante"),
+                                "auth_provider": "google.com",
+                            }
+                            page.client_storage.set("current_user", current_user_data)
+                            NavigationController.cache["current_user"] = current_user_data
+                            NavigationController.apply_user_preferences()
+                            NavigationController.preload_data()
+                            NavigationController.update_view("Inicio")
+                            return
+            except Exception as ex:
+                print(f"[OAuth Callback Error] {ex}")
+
+    page.on_route_change = handle_route_change
+
     def launch_app():
         time.sleep(0.5)
         try:

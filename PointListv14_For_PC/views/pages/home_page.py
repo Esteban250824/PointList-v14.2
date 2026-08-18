@@ -40,14 +40,14 @@ class HomePage(BasePage):
         # ─── Cabecera Superior (Navbar) ──────────────────────────────────────
         navbar = self._build_navbar(self.translate("nav_home"))
 
-        # ─── Procesar Datos Dinámicos / Fallbacks idénticos a NotesPage ──────
-        notes = NavigationController.cache.get("notes", [])
-        if not notes and self._user and self._user.get("id"):
+        notes = NavigationController.cache.get("notes", None)
+        if notes is None and self._user and self._user.get("id"):
             try:
                 notes = self._db.obtener_notas(self._user.get("id")) or []
-            except: pass
-        if not notes:
-            notes = [
+            except:
+                notes = []
+        if notes is None:
+            notes = [] if (self._user and self._user.get("id")) else [
                 {"asignatura": "Biología", "calificacion": 4.5},
                 {"asignatura": "Arte", "calificacion": 1.0},
                 {"asignatura": "Química", "calificacion": 4.7},
@@ -65,9 +65,9 @@ class HomePage(BasePage):
             except: pass
 
         grades = [float(n.get("calificacion", 0)) for n in notes]
-        avg_grade = sum(grades) / len(grades) if grades else 4.2
+        avg_grade = (sum(grades) / len(grades)) if grades else 0.0
         unique_subjects = list(set([n.get("asignatura", "") for n in notes if n.get("asignatura")]))
-        num_subjects = len(unique_subjects) if unique_subjects else 6
+        num_subjects = len(unique_subjects)
 
         excelentes = sum(1 for g in grades if g >= 4.5)
         buenas = sum(1 for g in grades if 3.0 <= g < 4.5)
@@ -295,6 +295,43 @@ class HomePage(BasePage):
             ], spacing=4)
         )
 
+        # ─── Banner de Accesos Rápidos "Jolteon Speed ⚡" ──────────────────────
+        def build_quick_btn(title, icon, color, view_name):
+            return ft.Container(
+                padding=ft.padding.symmetric(horizontal=16, vertical=10),
+                bgcolor=colors["card_bg"],
+                border_radius=14,
+                border=ft.border.all(1, color),
+                ink=True,
+                on_click=lambda e: NavigationController.update_view(view_name),
+                content=ft.Row([
+                    ft.Icon(icon, color=color, size=18),
+                    ft.Text(title, size=13, weight="bold", color=colors["text"])
+                ], spacing=8)
+            )
+
+        jolteon_banner = ft.Container(
+            padding=16,
+            bgcolor="#FEF3C7" if not is_dark else "#451A03",
+            border_radius=16,
+            border=ft.border.all(1, "#F59E0B"),
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.BOLT, color="#D97706", size=22),
+                    ft.Text("Módulos Rápidos de Estudio Activo ⚡", size=15, weight="bold", color="#B45309" if not is_dark else "#FCD34D"),
+                    ft.Container(expand=True),
+                    ft.Text("Navegación Jolteon 0ms", size=11, color="#D97706", weight="bold")
+                ]),
+                ft.Container(height=6),
+                ft.Row([
+                    build_quick_btn("🎴 Flashcards IA", ft.Icons.STYLE, "#0284C7", "Flashcards"),
+                    build_quick_btn("⏱️ Pomodoro Pro", ft.Icons.TIMER, "#EA580C", "Pomodoro"),
+                    build_quick_btn("🤖 PointBit IA", ft.Icons.SMART_TOY, "#10B981", "ChatBot"),
+                    build_quick_btn("📚 Técnicas IA", ft.Icons.AUTO_AWESOME, "#7C3AED", "Tecnicas"),
+                ], spacing=10, scroll=get_scroll_mode(self.page))
+            ], spacing=4)
+        )
+
         # ─── Principal de Contenido ───
         dashboard_content = ft.Container(
             expand=True,
@@ -305,6 +342,8 @@ class HomePage(BasePage):
                     ft.Text(self.translate("welcome_user").format(name=user_name), size=28, weight=ft.FontWeight.BOLD, color=colors["text"]),
                     ft.Text(self.translate("welcome_subtitle"), size=14, color=colors["text_secondary"]),
                 ], spacing=2),
+                ft.Container(height=12),
+                jolteon_banner,
                 ft.Container(height=12),
                 stats_row,
                 ft.Container(height=12),

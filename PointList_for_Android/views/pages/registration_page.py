@@ -1,7 +1,7 @@
 """
 pages/registration_page.py
-PointList v13 Mobile Responsive
-Página de registro de nuevos usuarios.
+PointList v0.14.25experiment
+Página de registro de nuevos usuarios con diseño de doble panel Figma.
 """
 
 import re
@@ -13,145 +13,186 @@ from utils.flet_compat import get_scroll_mode
 
 
 class RegistrationPage(BasePage):
-    """Página de registro de nuevos usuarios adaptada a pantallas táctiles."""
+    """Página de registro de nuevos usuarios con diseño premium v13."""
 
     def __init__(self, page: ft.Page):
         super().__init__(page)
+        self.dark_mode = self.page.theme_mode == ft.ThemeMode.DARK
         self._refresh_field_theme()
 
         self.terms_checkbox = ft.Checkbox(
-            label="Acepto los Términos de servicio", 
+            label="Acepto los Términos de servicio y la política de privacidad", 
             value=False, 
-            scale=0.9
+            scale=1.0
         )
         self.error_banner = ft.Container(visible=False)
         self.loading_indicator = ft.ProgressRing(visible=False, width=20, height=20)
 
+        self.left_panel_image = None
+        for filename in [
+            "login_left_panel.png",
+            "login_left_panel.jpg",
+            "login_left_panel.jpeg",
+            "login_left_panel.webp",
+        ]:
+            path = os.path.join("assets", "figma_assets", filename)
+            if os.path.isfile(path):
+                self.left_panel_image = path
+                break
+
     def _refresh_field_theme(self):
         """Recrea campos con colores según tema actual."""
-        is_dark = self.page.theme_mode == ft.ThemeMode.DARK if self.page else False
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
         field_bg = "#1E293B" if is_dark else ft.Colors.WHITE
         field_color = "#F1F5F9" if is_dark else "#111827"
-        border_color = "#334155" if is_dark else "#CBD5E1"
+        border_color = "#475569" if is_dark else "#D1D5DB"
 
         self.name_field = ft.TextField(
-            hint_text="Nombre completo",
-            prefix_icon=ft.Icons.PERSON_OUTLINED,
+            hint_text="Ingresa tu nombre completo",
+            prefix_icon=ft.Icons.PERSON,
             expand=True,
-            border_radius=12,
-            text_size=14,
-            height=50,
+            border_radius=10,
+            text_size=16,
+            height=64,
             bgcolor=field_bg,
             color=field_color,
-            border_color=border_color,
-            focused_border_color="#3B82F6",
-            content_padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            border_color="#111827" if not is_dark else border_color,
+            focused_border_color="#07547B",
+            content_padding=ft.padding.symmetric(horizontal=20, vertical=14),
         )
 
         self.email_field = ft.TextField(
-            hint_text="Correo electrónico",
-            prefix_icon=ft.Icons.EMAIL_OUTLINED,
+            hint_text="Ingresa tu correo electrónico",
+            prefix_icon=ft.Icons.PERSON,
             expand=True,
-            border_radius=12,
-            text_size=14,
-            height=50,
+            border_radius=10,
+            text_size=16,
+            height=64,
             bgcolor=field_bg,
             color=field_color,
-            border_color=border_color,
-            focused_border_color="#3B82F6",
-            content_padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            border_color="#111827" if not is_dark else border_color,
+            focused_border_color="#07547B",
+            content_padding=ft.padding.symmetric(horizontal=20, vertical=14),
             on_change=self._validate_email,
         )
 
-        self.rol_dropdown = ft.Dropdown(
-            hint_text="Tipo de cuenta",
-            prefix_icon=ft.Icons.SCHOOL,
-            options=[
-                ft.dropdown.Option("estudiante", "Estudiante"),
-                ft.dropdown.Option("profesor", "Profesor"),
-            ],
-            value="estudiante",
-            expand=True,
-            border_radius=12,
-            text_size=14,
-            bgcolor=field_bg,
-            color=field_color,
-            border_color=border_color,
-            focused_border_color="#3B82F6",
-            content_padding=ft.padding.symmetric(horizontal=16, vertical=12),
+        self.rol_dropdown = ft.Container(
+            height=64,
+            content=ft.Dropdown(
+                hint_text="Tipo de cuenta",
+                prefix_icon=ft.Icons.SCHOOL,
+                options=[
+                    ft.dropdown.Option("estudiante", "Estudiante"),
+                    ft.dropdown.Option("profesor", "Profesor"),
+                ],
+                value="estudiante",
+                expand=True,
+                border_radius=10,
+                text_size=16,
+                bgcolor=field_bg,
+                color=field_color,
+                border_color="#111827" if not is_dark else border_color,
+                focused_border_color="#07547B",
+                content_padding=ft.padding.symmetric(horizontal=20, vertical=14),
+            )
         )
 
-
         self.pw_field = ft.TextField(
-            hint_text="Contraseña",
-            prefix_icon=ft.Icons.LOCK_OUTLINED,
+            hint_text="Ingresa tu contraseña",
+            prefix_icon=ft.Icons.LOCK,
             password=True,
             can_reveal_password=True,
             expand=True,
-            border_radius=12,
-            text_size=14,
-            height=50,
+            border_radius=10,
+            text_size=16,
+            height=64,
             bgcolor=field_bg,
             color=field_color,
-            border_color=border_color,
-            focused_border_color="#3B82F6",
-            content_padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            border_color="#111827" if not is_dark else border_color,
+            focused_border_color="#07547B",
+            content_padding=ft.padding.symmetric(horizontal=20, vertical=14),
         )
 
         self.confirm_pw_field = ft.TextField(
-            hint_text="Confirmar contraseña",
-            prefix_icon=ft.Icons.LOCK_OUTLINED,
+            hint_text="Confirma tu contraseña",
+            prefix_icon=ft.Icons.LOCK,
             password=True,
             can_reveal_password=True,
             expand=True,
-            border_radius=12,
-            text_size=14,
-            height=50,
+            border_radius=10,
+            text_size=16,
+            height=64,
             bgcolor=field_bg,
             color=field_color,
-            border_color=border_color,
-            focused_border_color="#3B82F6",
-            content_padding=ft.padding.symmetric(horizontal=16, vertical=12),
-            on_submit=self._on_register,
+            border_color="#111827" if not is_dark else border_color,
+            focused_border_color="#07547B",
+            content_padding=ft.padding.symmetric(horizontal=20, vertical=14),
+            on_submit=self._register_user,
         )
 
         self.error_banner = ft.Container(
             visible=False,
-            padding=ft.padding.symmetric(horizontal=12, vertical=10),
-            border_radius=10,
+            padding=ft.padding.symmetric(horizontal=10, vertical=8),
+            border_radius=8,
             bgcolor=ft.Colors.RED_900 if is_dark else ft.Colors.RED_100,
             content=ft.Row([
-                ft.Icon(ft.Icons.ERROR, color=ft.Colors.RED_400, size=20),
-                ft.Text("", expand=True, color=ft.Colors.RED_400 if is_dark else ft.Colors.RED_700, size=13),
+                ft.Icon(ft.Icons.ERROR, color=ft.Colors.RED_400),
+                ft.Text("", expand=True, color=ft.Colors.RED_400 if is_dark else ft.Colors.RED),
             ]),
+            animate=ft.Animation(300, "easeOut"),
         )
 
     def _validate_email(self, e):
         email = self.email_field.value.strip()
         if email:
             pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-            self.email_field.error_text = None if re.match(pattern, email) else "Email inválido"
+            self.email_field.error_text = None if re.match(pattern, email) else "Formato de email inválido"
         else:
             self.email_field.error_text = None
         self.page.update()
+
+    def _validate_password(self, password: str) -> tuple[bool, str]:
+        """Valida que la contraseña cumpla los requisitos de Figma."""
+        if len(password) < 8:
+            return False, "La contraseña debe tener al menos 8 caracteres."
+        if not re.search(r"[A-Z]", password):
+            return False, "La contraseña debe contener al menos una mayúscula."
+        if not re.search(r"\d", password):
+            return False, "La contraseña debe contener al menos un número."
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            return False, "La contraseña debe contener al menos un símbolo."
+        return True, ""
 
     def _validate_form(self) -> bool:
         valid = True
         if not self.name_field.value.strip():
             self.name_field.error_text = "Nombre requerido"
             valid = False
+        else:
+            self.name_field.error_text = None
+
         if not self.email_field.value.strip():
             self.email_field.error_text = "Email requerido"
             valid = False
+        else:
+            self.email_field.error_text = None
+
         if not self.pw_field.value:
             self.pw_field.error_text = "Contraseña requerida"
             valid = False
+        else:
+            self.pw_field.error_text = None
+
         if self.pw_field.value != self.confirm_pw_field.value:
             self.confirm_pw_field.error_text = "Las contraseñas no coinciden"
             valid = False
+        else:
+            self.confirm_pw_field.error_text = None
+
         if not self.terms_checkbox.value:
             self._show_error("Debes aceptar los términos y condiciones")
             valid = False
+
         self.page.update()
         return valid
 
@@ -168,127 +209,312 @@ class RegistrationPage(BasePage):
         except:
             pass
 
-    def _on_register(self, e):
+    def _continue_with_google(self, e=None):
+        """Abre directamente la página oficial de Google OAuth 2.0 en el navegador web (Chrome/Edge)."""
+        from services.google_service import google_service
+        google_service.launch_real_google_oauth(self.page)
+
+    def _show_email_otp_dialog(self, name: str, email: str, pw: str, rol: str):
+        """Muestra el diálogo de Verificación de Correo Electrónico con código OTP de 6 dígitos."""
+        from services.google_service import google_service
+        from services.database_service import db
+        from services.navigation_service import NavigationController
+
+        otp_code = google_service.generate_email_otp(email)
+        otp_field = ft.TextField(
+            hint_text="123456",
+            text_size=22,
+            text_style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+            width=180,
+            text_align=ft.TextAlign.CENTER,
+            autofocus=True,
+            border_radius=10,
+        )
+        smtp_active = bool(os.getenv("SMTP_EMAIL") and os.getenv("SMTP_PASSWORD"))
+        if smtp_active:
+            subtext = "📩 Revisa tu bandeja de entrada (o spam) para ver tu código de 6 dígitos."
+        else:
+            subtext = f"⭐ Código de prueba rápido: {otp_code}"
+
+        otp_error_text = ft.Text(subtext, color="#0284C7", size=12, text_align=ft.TextAlign.CENTER)
+
+        def _verify_and_register(e):
+            code = otp_field.value.strip()
+            if google_service.verify_email_otp(email, code):
+                self.page.close(dlg)
+                result = db.crear_usuario(name, email, pw, rol)
+                if result["ok"]:
+                    user = result["usuario"]
+                    current_user_data = {
+                        "id": user.get("id"),
+                        "name": user.get("nombre_usuario", name),
+                        "email": email,
+                        "photo_url": "",
+                        "rol": user.get("rol", rol),
+                    }
+                    self.page.close(dlg)
+                    NavigationController.set_user_and_navigate(current_user_data, "Inicio")
+                else:
+                    self._show_error(result["error"])
+            else:
+                otp_error_text.value = "⚠️ Código inválido o expirado. Revisa tu correo e inténtalo de nuevo."
+                otp_error_text.color = "red"
+                try: self.page.update()
+                except: pass
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Row([
+                ft.Icon(ft.Icons.MARK_EMAIL_READ, color="#0284C7", size=24),
+                ft.Text("Verificación de Correo", size=16, weight="bold")
+            ]),
+            content=ft.Column([
+                ft.Text(f"Hemos enviado un código OTP de 6 dígitos a:", size=12, color="#64748B"),
+                ft.Text(email, size=13, weight="bold", color="#0F172A"),
+                ft.Container(height=10),
+                ft.Row([otp_field], alignment=ft.MainAxisAlignment.CENTER),
+                ft.Container(height=6),
+                otp_error_text,
+            ], tight=True, spacing=4, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg)),
+                ft.ElevatedButton("Verificar y Crear Cuenta", bgcolor="#0284C7", color="white", on_click=_verify_and_register),
+            ],
+        )
+        self.page.open(dlg)
+
+    def _register_user(self, e):
         if not self._validate_form():
             return
-        nombre = self.name_field.value.strip()
+
         email = self.email_field.value.strip()
-        password = self.pw_field.value
-        rol = self.rol_dropdown.value or "estudiante"
+        name  = self.name_field.value.strip()
+        pw    = self.pw_field.value
+        rol   = self.rol_dropdown.content.value
 
-        self.loading_indicator.visible = True
-        self.error_banner.visible = False
-        self.page.update()
+        is_valid_pw, pw_error = self._validate_password(pw)
+        if not is_valid_pw:
+            self._show_error(pw_error)
+            return
 
-        try:
-            from services.database_service import db
-            from services.navigation_service import NavigationController
-            res = db.crear_usuario(nombre, email, password, rol=rol)
-            if not res["ok"]:
-                self._show_error(res.get("error", "Error al crear la cuenta"))
-                return
-            user = res["usuario"]
-            current_user_data = {
-                "id": user.get("id"),
-                "name": nombre,
-                "email": email,
-                "photo_url": "",
-                "rol": rol,
-            }
-            NavigationController.cache["current_user"] = current_user_data
-            NavigationController.apply_user_preferences()
-            NavigationController.preload_data()
-            NavigationController.update_view("Inicio")
-        except Exception as err:
-            self._show_error(f"Error al registrar: {str(err)}")
-        finally:
-            self.loading_indicator.visible = False
-            self.page.update()
+        self._show_email_otp_dialog(name, email, pw, rol)
+
+    def _build_left_panel(self, is_dark: bool) -> ft.Container:
+        left_bg = "#F5F8FD" if not is_dark else "#111827"
+        title_color = "#0F172A" if not is_dark else "#F8FAFC"
+        subtitle_color = "#475569" if not is_dark else "#94A3B8"
+
+        panel_width = max(300, int((self.page.width or 1600) * 0.25))
+        content_width = panel_width - 80
+
+        if self.left_panel_image:
+            illustration = ft.Image(
+                src=self.left_panel_image,
+                fit=ft.ImageFit.COVER,
+                expand=True,
+            )
+        else:
+            illustration = ft.Stack([
+                ft.Container(
+                    width=int(content_width * 0.3),
+                    height=240,
+                    left=0,
+                    bottom=0,
+                    border_radius=ft.border_radius.only(top_right=120, bottom_right=120),
+                    bgcolor="#0AA174",
+                ),
+                ft.Container(
+                    width=content_width,
+                    height=240,
+                    right=0,
+                    bottom=0,
+                    border_radius=ft.border_radius.only(top_left=120, bottom_left=120),
+                    bgcolor="#0F4E7A",
+                ),
+                ft.Container(
+                    width=int(content_width * 0.7),
+                    height=180,
+                    left=int(content_width * 0.18),
+                    bottom=30,
+                    border_radius=ft.border_radius.all(92),
+                    bgcolor="#37729C",
+                ),
+            ], width=content_width, height=240, clip_behavior=ft.ClipBehavior.HARD_EDGE)
+
+        from utils.helpers import get_logo_control
+        logo_ctrl = get_logo_control(width=56, height=56)
+
+        return ft.Container(
+            width=panel_width,
+            bgcolor=left_bg,
+            padding=ft.padding.only(left=40, right=40, top=40, bottom=40),
+            content=ft.Column([
+                ft.Row([
+                    logo_ctrl,
+                    ft.Container(width=12),
+                    ft.Text("PointList", size=30, weight=ft.FontWeight.BOLD, color=title_color),
+                ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                ft.Container(height=32),
+                ft.Text(
+                    "Crea tu cuenta y empieza a organizarte",
+                    size=36,
+                    weight=ft.FontWeight.BOLD,
+                    color=title_color,
+                    width=content_width,
+                ),
+                ft.Container(height=20),
+                ft.Text(
+                    "Únete a PointList y lleva tus calificaciones, tareas y proyectos al siguiente nivel.",
+                    size=16,
+                    color=subtitle_color,
+                    width=content_width,
+                ),
+                ft.Container(height=28),
+                ft.Container(expand=True),
+                illustration,
+            ], expand=True, spacing=0),
+        )
+
+    def _social_button(self, icon: str, color: str, label=""):
+        on_clk = self._continue_with_google if label == "Google" else lambda e: print(f"Social registration: {label or icon}")
+        return ft.Container(
+            width=56,
+            height=56,
+            border_radius=28,
+            bgcolor=ft.Colors.WHITE,
+            alignment=ft.alignment.center,
+            content=ft.Text(icon, color=color, size=26, weight=ft.FontWeight.BOLD),
+            on_click=on_clk,
+            shadow=ft.BoxShadow(blur_radius=10, color=ft.Colors.BLACK12, offset=ft.Offset(0, 6)),
+        )
 
     def build(self) -> ft.Control:
         from services.navigation_service import NavigationController
-        is_dark = self.page.theme_mode == ft.ThemeMode.DARK if self.page else False
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
         self._refresh_field_theme()
 
         colors = self._get_theme_colors()
         page_bg = colors["background"]
-        card_bg = colors["surface"]
+        right_bg = colors["surface"]
         title_color = colors["text"]
         subtitle_color = colors["text_secondary"]
-        is_mob = self.is_mobile()
-
-
-
-        header_mob = ft.Column([
-            ft.Row([
-                ft.Image(src="assets/logo.png", width=32, height=32, fit=ft.ImageFit.CONTAIN),
-                ft.Text("PointList", size=24, weight="bold", color=title_color),
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            ft.Container(height=12),
-        ], visible=is_mob)
+        link_color = "#07547B" if not is_dark else "#818CF8"
 
         form_column = ft.Column([
-            header_mob,
-            ft.Text("Crea tu cuenta", size=22 if is_mob else 28, weight=ft.FontWeight.BOLD, color=title_color),
-            ft.Container(height=4),
-            ft.Text("Únete a PointList y gestiona tus notas fácilmente.", size=13 if is_mob else 15, color=subtitle_color),
-            ft.Container(height=16),
+            ft.Text("Crear cuenta", size=34, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Container(height=8),
+            ft.Text("Completa tus datos para registrarte en PointList.", size=16, color=subtitle_color),
+            ft.Container(height=24),
             self.error_banner,
-            ft.Text("Nombre completo", size=13, weight=ft.FontWeight.BOLD, color=title_color),
-            ft.Container(height=4),
+            
+            ft.Text("Nombre completo", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Container(height=8),
             self.name_field,
-            ft.Container(height=12),
-            ft.Text("Correo electrónico", size=13, weight=ft.FontWeight.BOLD, color=title_color),
-            ft.Container(height=4),
-            self.email_field,
-            ft.Container(height=12),
-            ft.Text("Rol", size=13, weight=ft.FontWeight.BOLD, color=title_color),
-            ft.Container(height=4),
-            self.rol_dropdown,
-            ft.Container(height=12),
-            ft.Text("Contraseña", size=13, weight=ft.FontWeight.BOLD, color=title_color),
-            ft.Container(height=4),
-            self.pw_field,
-            ft.Container(height=12),
-            ft.Text("Confirmar contraseña", size=13, weight=ft.FontWeight.BOLD, color=title_color),
-            ft.Container(height=4),
-            self.confirm_pw_field,
-            ft.Container(height=12),
-            self.terms_checkbox,
             ft.Container(height=16),
+            
+            ft.Text("Correo electrónico", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Container(height=8),
+            self.email_field,
+            ft.Container(height=16),
+
+            ft.Text("Tipo de cuenta", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Container(height=8),
+            self.rol_dropdown,
+            ft.Container(height=16),
+            
+            ft.Text("Contraseña", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Container(height=8),
+            self.pw_field,
+            ft.Text("Mínimo 8 caracteres, con mayúscula, número y símbolo.", size=11, color=subtitle_color),
+            ft.Container(height=16),
+
+            ft.Text("Confirmar contraseña", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Container(height=8),
+            self.confirm_pw_field,
+            ft.Container(height=16),
+
+            ft.Row([
+                self.terms_checkbox
+            ]),
+            ft.Container(height=20),
+            
             ft.ElevatedButton(
-                "Registrarse",
-                on_click=self._on_register,
-                bgcolor=self.primary_color,
-                color=ft.Colors.WHITE,
-                height=48,
-                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12), text_style=ft.TextStyle(size=15, weight="bold")),
+                content=ft.Row([
+                    ft.Text("Iniciar Sesión", size=16, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                    ft.Icon(ft.Icons.ARROW_FORWARD, color=ft.Colors.WHITE, size=18),
+                ], alignment=ft.MainAxisAlignment.CENTER, spacing=8),
+                on_click=self._register_user,
+                bgcolor="#0A1E3D",
+                height=56,
+                expand=True,
+                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=16)),
             ),
+            ft.Container(height=20),
+            ft.Row([
+                ft.Container(expand=True, height=1, bgcolor="#E2E8F0"),
+                ft.Container(padding=ft.padding.symmetric(horizontal=12), content=ft.Text("o continua con", size=12, color=subtitle_color)),
+                ft.Container(expand=True, height=1, bgcolor="#E2E8F0"),
+            ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
             ft.Container(height=16),
             ft.Row([
-                ft.Text("¿Ya tienes cuenta?", size=13, color=subtitle_color),
+                self._social_button("G", "#EA4335", "Google"),
+                ft.Container(width=16),
+                self._social_button("f", "#1877F2", "Facebook"),
+            ], alignment=ft.MainAxisAlignment.CENTER),
+            ft.Container(height=20),
+            ft.Row([
+                ft.Text("¿Ya tienes cuenta?", size=14, color=subtitle_color),
+                ft.Container(width=8),
                 ft.TextButton(
-                    "Inicia sesión aquí",
+                    "Iniciar Sesión",
                     on_click=lambda e: NavigationController.update_view("Login"),
-                    style=ft.ButtonStyle(color="#EC4899", text_style=ft.TextStyle(size=13, weight="bold")),
+                    style=ft.ButtonStyle(color="#FF4D6E", text_style=ft.TextStyle(size=14)),
                 ),
             ], alignment=ft.MainAxisAlignment.CENTER),
+            ft.Container(height=12),
             ft.Row([self.loading_indicator], alignment=ft.MainAxisAlignment.CENTER),
         ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
 
-        reg_card = ft.Container(
-            width=None if is_mob else 500,
-            padding=ft.padding.all(20 if is_mob else 32),
-            bgcolor=card_bg,
-            border_radius=16 if is_mob else 24,
-            border=ft.border.all(1, colors["border"]),
-            content=form_column,
+        registration_card = ft.Container(
+            width=520,
+            padding=ft.padding.all(40),
+            bgcolor=right_bg,
+            border_radius=24,
+            shadow=ft.BoxShadow(blur_radius=24, color=ft.Colors.BLACK12, offset=ft.Offset(0, 12)),
+            content=ft.Column([form_column], scroll=get_scroll_mode("AUTO")),
         )
+
+        right_panel = ft.Container(
+            expand=True,
+            bgcolor=page_bg,
+            padding=ft.padding.symmetric(horizontal=40, vertical=40),
+            alignment=ft.alignment.center,
+            content=registration_card,
+        )
+
+        left_panel = self._build_left_panel(is_dark)
+        right_side = ft.Container(
+            expand=True,
+            bgcolor=page_bg,
+            content=right_panel,
+        )
+
+        is_desktop = (self.page.width or 1200) >= 980
+        if is_desktop:
+            split = ft.Row(
+                controls=[left_panel, right_side],
+                expand=True,
+                spacing=0,
+            )
+        else:
+            split = ft.Column(
+                controls=[left_panel, right_side],
+                expand=True,
+                spacing=0,
+            )
 
         return ft.Container(
             expand=True,
             bgcolor=page_bg,
-            padding=ft.padding.symmetric(horizontal=16 if is_mob else 32, vertical=16 if is_mob else 32),
-            alignment=ft.alignment.center,
-            content=ft.Column([reg_card], scroll=get_scroll_mode(self.page), alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            content=split,
         )

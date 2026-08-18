@@ -1,5 +1,5 @@
 """
-pages/notes_page.py - v13.5 Dashboard de Calificaciones
+pages/notes_page.py - v13.5 Dashboard de Calificaciones (For Android)
 Diseño idéntico a Figma (Vista principal y Modal Expandido en 4 columnas)
 """
 
@@ -79,33 +79,36 @@ class NotesPage(BasePage):
         self._stop_sync = False
 
     def _load_notas(self):
-        """Carga notas desde BD o caché. Si está vacío, usa notas de demostración de Figma."""
+        """Carga notas desde BD o caché. Si el usuario está registrado y no tiene notas, la lista permanece vacía (0 notas)."""
         from services.navigation_service import NavigationController
-        cached_notes = NavigationController.cache.get("notes", [])
-        if cached_notes:
+        cached_notes = NavigationController.cache.get("notes", None)
+        if cached_notes is not None:
             self._notas = copy.deepcopy(cached_notes)
         else:
-            db_notes = self._db.obtener_notas(self._uid) if self._uid else []
-            if db_notes:
-                self._notas = copy.deepcopy(db_notes)
+            if self._uid:
+                try:
+                    db_notes = self._db.obtener_notas(self._uid)
+                    self._notas = copy.deepcopy(db_notes) if db_notes is not None else []
+                except:
+                    self._notas = []
             else:
                 self._notas = copy.deepcopy(self.DEFAULT_NOTES)
             NavigationController.cache["notes"] = copy.deepcopy(self._notas)
 
     def _sync_notes_background(self):
-        """Sincroniza notas en background."""
-        time.sleep(1)
+        """Sincroniza notas en background sin inyectar notas por defecto ni bloquear la UI."""
+        if not self._uid: return
+        time.sleep(3)
         while not self._stop_sync:
             try:
-                from services.navigation_service import NavigationController
-                db_notes = self._db.obtener_notas(self._uid) if self._uid else []
-                new_notes = db_notes if db_notes else self.DEFAULT_NOTES
-                if new_notes != self._notas:
-                    self._notas = copy.deepcopy(new_notes)
-                    NavigationController.cache["notes"] = copy.deepcopy(new_notes)
+                db_notes = self._db.obtener_notas(self._uid) or []
+                if db_notes != self._notas:
+                    self._notas = copy.deepcopy(db_notes)
+                    from services.navigation_service import NavigationController
+                    NavigationController.cache["notes"] = copy.deepcopy(db_notes)
                     self._refresh_ui_full()
             except: pass
-            time.sleep(6)
+            time.sleep(12)
 
     def _refresh_ui_full(self):
         """Refresca toda la interfaz."""
@@ -116,69 +119,74 @@ class NotesPage(BasePage):
         try: self.page.update()
         except: pass
 
-    def _create_kpi_card(self, icon, value, label, color, subtitle):
-        """Crea una tarjeta KPI adaptable para cualquier resolución de pantalla."""
+    def _create_kpi_card(self, icon, value, label, color, subtitle=""):
+        """Crea una tarjeta KPI estilo Figma."""
         colors = self._get_theme_colors()
-        is_mob = self.is_mobile()
         return ft.Container(
-            padding=ft.padding.symmetric(horizontal=8 if is_mob else 14, vertical=8 if is_mob else 12),
+            padding=ft.padding.symmetric(horizontal=16, vertical=14),
             bgcolor=colors["surface"],
-            border_radius=14,
-            border=ft.border.all(1, colors["border"]),
+            border_radius=16,
+            border=ft.border.all(1, "#E2E8F0"),
+            shadow=ft.BoxShadow(blur_radius=6, color=ft.Colors.BLACK12, offset=ft.Offset(0, 2)),
             expand=True,
             content=ft.Row([
                 ft.Container(
-                    width=34 if is_mob else 44, height=34 if is_mob else 44, border_radius=10,
+                    width=48, height=48, border_radius=12,
                     bgcolor=ft.Colors.with_opacity(0.15, color),
                     alignment=ft.alignment.center,
-                    content=ft.Icon(icon, color=color, size=16 if is_mob else 22)
+                    content=ft.Icon(icon, color=color, size=24)
                 ),
-                ft.Container(width=5 if is_mob else 10),
+                ft.Container(width=10),
                 ft.Column([
-                    ft.Text(label, size=9.5 if is_mob else 11, color=colors["text_secondary"], weight="w500", max_lines=2, overflow=ft.TextOverflow.VISIBLE),
-                    ft.Text(str(value), size=16 if is_mob else 22, weight="bold", color=colors["text"]),
-                    ft.Text(subtitle, size=8.5 if is_mob else 10, color=colors["text_muted"], max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
-                ], spacing=0, expand=True, alignment=ft.MainAxisAlignment.CENTER),
+                    ft.Text(label, size=11, color=colors["text_secondary"], weight="w500"),
+                    ft.Text(str(value), size=24, weight="bold", color=colors["text"]),
+                    ft.Text(subtitle, size=10, color=colors["text_secondary"]),
+                ], spacing=1, expand=True),
             ], spacing=0, vertical_alignment=ft.CrossAxisAlignment.CENTER)
         )
 
     def _refresh_kpi_view(self):
-        """Actualiza los 4 KPIs superiores en grid 2x2 para móviles o fila para escritorio."""
+        """Actualiza los 4 KPIs superiores."""
         if not self._notas:
-            self.kpi_row.content = ft.Container(height=100)
+            self.kpi_row.content = ft.Row([
+                self._create_kpi_card(ft.Icons.BOOK_ROUNDED, 0, "Asignaturas", "#8B5CF6", "Inscritas"),
+                self._create_kpi_card(ft.Icons.SHOW_CHART, "0.0", "Promedio General", "#10B981", "Sobre 5.0"),
+                self._create_kpi_card(ft.Icons.BAR_CHART, "-", "Mejor Calificación", "#3B82F6", "Sin datos"),
+                self._create_kpi_card(ft.Icons.TRENDING_DOWN, "-", "Más baja", "#EF4444", "Sin datos"),
+            ], spacing=12, expand=True)
             return
-
+        
         total_subjects = len(set(n.get("asignatura") for n in self._notas))
         avg_grade = sum(float(n.get("calificacion", 0)) for n in self._notas) / len(self._notas)
-
+        
         best_note = max(self._notas, key=lambda n: float(n.get("calificacion", 0)))
         worst_note = min(self._notas, key=lambda n: float(n.get("calificacion", 0)))
-
+        
         best_grade = float(best_note.get("calificacion", 0))
         best_subj = best_note.get("asignatura", "")
-
+        
         worst_grade = float(worst_note.get("calificacion", 0))
         worst_subj = worst_note.get("asignatura", "")
-
-        c1 = self._create_kpi_card(ft.Icons.BOOK_ROUNDED, total_subjects, "Asignaturas", "#8B5CF6", "Inscritas")
-        c2 = self._create_kpi_card(ft.Icons.SHOW_CHART, f"{avg_grade:.1f}", "Promedio", "#10B981", "Sobre 5.0")
-        c3 = self._create_kpi_card(ft.Icons.BAR_CHART, f"{best_grade:.1f}", "Mejor Nota", "#3B82F6", best_subj)
-        c4 = self._create_kpi_card(ft.Icons.TRENDING_DOWN, f"{worst_grade:.1f}", "Más baja", "#EF4444", worst_subj)
-
-        is_mob = self.is_mobile()
-        if is_mob:
-            self.kpi_row.content = ft.Column([
-                ft.Row([c1, c2], spacing=10),
-                ft.Row([c3, c4], spacing=10),
-            ], spacing=10)
-        else:
-            self.kpi_row.content = ft.Row([c1, c2, c3, c4], spacing=12, expand=True)
-
+        
+        self.kpi_row.content = ft.Row([
+            self._create_kpi_card(ft.Icons.BOOK_ROUNDED, total_subjects, "Asignaturas", "#8B5CF6", "Inscritas"),
+            self._create_kpi_card(ft.Icons.SHOW_CHART, f"{avg_grade:.1f}", "Promedio General", "#10B981", "Sobre 5.0"),
+            self._create_kpi_card(ft.Icons.BAR_CHART, f"{best_grade:.1f}", "Mejor Calificación", "#3B82F6", best_subj),
+            self._create_kpi_card(ft.Icons.TRENDING_DOWN, f"{worst_grade:.1f}", "Más baja", "#EF4444", worst_subj),
+        ], spacing=12, expand=True)
 
     def _create_bar_chart(self):
         """Crea gráfica de barras por asignatura idéntica a Figma."""
         if not self._notas:
-            return ft.Container(height=240)
+            return ft.Container(
+                height=220,
+                alignment=ft.alignment.center,
+                content=ft.Column([
+                    ft.Icon(ft.Icons.BAR_CHART_OUTLINED, size=36, color="#94A3B8"),
+                    ft.Container(height=6),
+                    ft.Text("Sin calificaciones para graficar promedios", color="#94A3B8", size=13, weight="w500")
+                ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+            )
         
         subject_avg = {}
         for note in self._notas:
@@ -196,18 +204,16 @@ class NotesPage(BasePage):
                 return "#8B5CF6"
             return "#EF4444"
         
-        is_mob = self.is_mobile()
         bars = []
         labels = []
         for idx, (subj, avg) in enumerate(sorted(subject_avg.items())):
             color = grade_color(avg)
-            label_text = (subj[:4] + ".") if (is_mob and len(subj) > 5) else subj
             bars.append(
                 ft.BarChartGroup(
                     x=idx,
                     bar_rods=[
                         ft.BarChartRod(
-                            from_y=0, to_y=avg, width=14 if is_mob else 24,
+                            from_y=0, to_y=avg, width=28,
                             color=color,
                             tooltip=f"{subj}: {avg:.1f}",
                             border_radius=ft.border_radius.only(top_left=4, top_right=4),
@@ -219,19 +225,19 @@ class NotesPage(BasePage):
                 ft.ChartAxisLabel(
                     idx,
                     ft.Container(
-                        content=ft.Text(label_text, size=9 if is_mob else 11, color="#475569", weight="w500"),
+                        content=ft.Text(subj, size=11, color="#475569", weight="w500"),
                         alignment=ft.alignment.center
                     )
                 )
             )
-
+        
         chart = ft.BarChart(
             bar_groups=bars,
             border=ft.border.all(0, ft.Colors.TRANSPARENT),
-            left_axis=ft.ChartAxis(labels_size=20 if is_mob else 24, title=ft.Text("", size=10)),
+            left_axis=ft.ChartAxis(labels_size=24, title=ft.Text("", size=10)),
             bottom_axis=ft.ChartAxis(
                 labels=labels,
-                labels_size=24 if is_mob else 32,
+                labels_size=32,
             ),
             min_y=0, max_y=5.0,
             interactive=True,
@@ -240,214 +246,28 @@ class NotesPage(BasePage):
                 color="#E2E8F0", width=1, interval=1
             ),
         )
-
+        
         return chart
 
-
     def _refresh_chart_view(self):
-        """Reemplaza la sección 'Promedio por asignatura' con 'Próximos eventos' (esta semana y semana entrante)."""
+        """Actualiza la gráfica principal."""
         colors = self._get_theme_colors()
-        is_mob = self.is_mobile()
-
-        from services.navigation_service import NavigationController
-        cached_events = NavigationController.cache.get("events", [])
-        if cached_events:
-            real_events = copy.deepcopy(cached_events)
-        else:
-            real_events = self._db.obtener_eventos(self._uid) if self._uid else []
-            if real_events:
-                NavigationController.cache["events"] = copy.deepcopy(real_events)
-
-        now = datetime.now()
-        # Inicio de la semana actual (Lunes) y fin de la semana entrante (Domingo de la próxima semana)
-        start_of_this_week = (now - timedelta(days=now.weekday())).date()
-        end_of_next_week = start_of_this_week + timedelta(days=13)
-
-        parsed_events = []
-        months_es = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-
-        if real_events:
-            for ev in real_events:
-                try:
-                    raw_dt = ev.get("fecha_inicio")
-                    dt_obj = None
-                    if isinstance(raw_dt, datetime):
-                        dt_obj = raw_dt
-                    elif isinstance(raw_dt, date):
-                        dt_obj = datetime.combine(raw_dt, datetime.min.time())
-                    elif isinstance(raw_dt, str):
-                        clean_str = raw_dt.replace("Z", "+00:00").strip()
-                        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%d/%m/%Y"):
-                            try:
-                                dt_obj = datetime.strptime(clean_str[:19], fmt)
-                                break
-                            except Exception:
-                                pass
-                        if not dt_obj:
-                            try:
-                                dt_obj = datetime.fromisoformat(clean_str)
-                            except Exception:
-                                pass
-
-                    if dt_obj and start_of_this_week <= dt_obj.date() <= end_of_next_week:
-                        tipo = ev.get("tipo_evento", "General")
-                        tipo_lower = str(tipo).lower()
-                        title_lower = str(ev.get("titulo", "")).lower()
-
-                        if "examen" in tipo_lower or "examen" in title_lower or "química" in title_lower:
-                            badge_color = "#10B981"
-                            badge_bg = "#DCFCE7"
-                        elif "tarea" in tipo_lower or "informática" in title_lower or "entrega" in title_lower:
-                            badge_color = "#8B5CF6"
-                            badge_bg = "#F3E8FF"
-                        else:
-                            badge_color = "#EF4444"
-                            badge_bg = "#FEE2E2"
-
-                        time_str = dt_obj.strftime("%I:%M %p") if (dt_obj.hour or dt_obj.minute) else "Todo el día"
-                        date_str = f"{dt_obj.day} de {months_es[dt_obj.month - 1]}"
-
-                        is_this_week = dt_obj.date() <= (start_of_this_week + timedelta(days=6))
-                        week_tag = "Esta semana" if is_this_week else "Semana entrante"
-
-                        parsed_events.append({
-                            "title": ev.get("titulo", "Evento"),
-                            "date": date_str,
-                            "time": time_str,
-                            "color": badge_color,
-                            "bg": badge_bg,
-                            "dt": dt_obj,
-                            "week_tag": week_tag,
-                        })
-                except Exception:
-                    continue
-
-        parsed_events.sort(key=lambda x: x["dt"])
-
-        # Si no hay eventos guardados en esta ventana de 2 semanas, mostrar demostración precisa de esta semana y la entrante
-        if not parsed_events:
-            demo_d1 = now + timedelta(days=1)
-            demo_d2 = now + timedelta(days=3)
-            demo_d3 = start_of_this_week + timedelta(days=8)  # Próxima semana
-            demo_d4 = start_of_this_week + timedelta(days=11) # Próxima semana
-
-            parsed_events = [
-                {
-                    "title": "Examen de Química Orgánica",
-                    "date": f"{demo_d1.day} de {months_es[demo_d1.month - 1]}",
-                    "time": "09:00 AM",
-                    "color": "#10B981",
-                    "bg": "#DCFCE7",
-                    "week_tag": "Esta semana" if demo_d1.date() <= (start_of_this_week + timedelta(days=6)) else "Semana entrante",
-                },
-                {
-                    "title": "Entrega de informe de Informática",
-                    "date": f"{demo_d2.day} de {months_es[demo_d2.month - 1]}",
-                    "time": "11:59 PM",
-                    "color": "#8B5CF6",
-                    "bg": "#F3E8FF",
-                    "week_tag": "Esta semana" if demo_d2.date() <= (start_of_this_week + timedelta(days=6)) else "Semana entrante",
-                },
-                {
-                    "title": "Examen Parcial de Matemáticas",
-                    "date": f"{demo_d3.day} de {months_es[demo_d3.month - 1]}",
-                    "time": "10:00 AM",
-                    "color": "#EF4444",
-                    "bg": "#FEE2E2",
-                    "week_tag": "Semana entrante",
-                },
-                {
-                    "title": "Laboratorio de Física",
-                    "date": f"{demo_d4.day} de {months_es[demo_d4.month - 1]}",
-                    "time": "02:30 PM",
-                    "color": "#2563EB",
-                    "bg": "#DBEAFE",
-                    "week_tag": "Semana entrante",
-                },
-            ]
-
-        event_cards = []
-        for ev in parsed_events[:4]:
-            event_cards.append(
-                ft.Container(
-                    col={"xs": 12, "sm": 6},
-                    padding=ft.padding.symmetric(horizontal=14, vertical=12),
-                    bgcolor=colors["surface"],
-                    border_radius=12,
-                    border=ft.border.all(1, colors["border"]),
-                    shadow=ft.BoxShadow(blur_radius=4, color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK)),
-                    content=ft.Row([
-                        ft.Container(
-                            width=40, height=40, border_radius=10,
-                            bgcolor=ev["bg"],
-                            alignment=ft.alignment.center,
-                            content=ft.Icon(ft.Icons.CALENDAR_MONTH, color=ev["color"], size=20)
-                        ),
-                        ft.Container(width=10),
-                        ft.Column([
-                            ft.Row([
-                                ft.Container(
-                                    content=ft.Text(ev["week_tag"], size=9, weight="bold", color=ev["color"]),
-                                    bgcolor=ev["bg"],
-                                    padding=ft.padding.symmetric(horizontal=6, vertical=2),
-                                    border_radius=4,
-                                ),
-                                ft.Text(ev["time"], size=10, color=colors["text_muted"], weight="w500"),
-                            ], spacing=6, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                            ft.Container(height=2),
-                            ft.Text(ev["title"], size=12.5, weight="bold", color=colors["text"], max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
-                            ft.Text(ev["date"], size=10.5, color=colors["text_secondary"]),
-                        ], spacing=1, expand=True),
-                    ], spacing=0, vertical_alignment=ft.CrossAxisAlignment.CENTER)
-                )
-            )
-
-        events_grid = ft.ResponsiveRow(controls=event_cards, spacing=12, run_spacing=12)
-
-        header_row = ft.Row([
-            ft.Row([
-                ft.Container(
-                    width=36, height=36, border_radius=10,
-                    bgcolor=ft.Colors.with_opacity(0.12, "#10B981"),
-                    alignment=ft.alignment.center,
-                    content=ft.Icon(ft.Icons.EVENT_NOTE, color="#10B981", size=20),
-                ),
-                ft.Container(width=8),
-                ft.Column([
-                    ft.Text("Próximos Eventos", size=16, weight="bold", color=colors["text"]),
-                    ft.Text("Eventos de esta semana y la semana entrante", size=11, color=colors["text_muted"]),
-                ], spacing=0),
-            ], spacing=0),
-            ft.IconButton(
-                icon=ft.Icons.ARROW_FORWARD,
-                icon_color="#10B981",
-                tooltip="Ver en Calendario",
-                on_click=self._go_to_calendar,
-            ) if is_mob else ft.TextButton(
-                "Ver en Calendario",
-                icon=ft.Icons.ARROW_FORWARD,
-                icon_color="#10B981",
-                style=ft.ButtonStyle(color="#10B981"),
-                on_click=self._go_to_calendar,
-            )
-        ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
-
-
+        chart = self._create_bar_chart()
+        
         self.chart_container.content = ft.Container(
             content=ft.Column([
-                header_row,
-                ft.Container(height=14),
-                events_grid,
+                ft.Text("Promedio por asignatura", size=16, weight="bold", color="#0F172A"),
+                ft.Container(height=10),
+                ft.Container(content=chart, height=220, expand=True)
             ], spacing=0),
-            padding=ft.padding.all(18 if is_mob else 20),
+            padding=ft.padding.all(20),
             bgcolor=colors["surface"],
             border_radius=16,
-            border=ft.border.all(1, colors["border"]),
-            shadow=ft.BoxShadow(blur_radius=12, spread_radius=-2, color=ft.Colors.with_opacity(0.06, ft.Colors.BLACK)),
+            border=ft.border.all(1, "#E2E8F0"),
         )
 
     def _create_note_card(self, note):
-        """Crea tarjeta de nota idéntica a la de Figma con protección Solo Lectura para estudiantes."""
+        """Crea tarjeta de nota idéntica a la de Figma."""
         grade = float(note.get("calificacion", 0))
 
         if grade >= 4.0:
@@ -460,8 +280,6 @@ class NotesPage(BasePage):
         colors = self._get_theme_colors()
         fecha = str(note.get("fecha", ""))
         comment = note.get("comentarios", "") or "-"
-        profesor_nombre = note.get("profesor", "")
-        is_teacher_assigned = bool(profesor_nombre or note.get("profesor_id"))
 
         def _do_delete(e):
             nid = note.get("id")
@@ -471,17 +289,7 @@ class NotesPage(BasePage):
                 NavigationController.cache["notes"] = self._notas
                 self._refresh_ui_full()
                 import threading
-                threading.Thread(target=lambda: self._db.eliminar_nota(nid, self._uid) if hasattr(self._db, 'eliminar_nota') else None, daemon=True).start()
-
-        # Si es un estudiante y la nota fue puesta por un profesor -> SOLO LECTURA (sin opción de eliminar)
-        can_delete = not (self._rol == "estudiante" and is_teacher_assigned)
-
-        teacher_badge = ft.Container()
-        if is_teacher_assigned:
-            teacher_badge = ft.Row([
-                ft.Icon(ft.Icons.LOCK, size=11, color="#10B981"),
-                ft.Text(f"Profesor: {profesor_nombre or 'Docente'}", size=10, weight="bold", color="#10B981")
-            ], spacing=2)
+                threading.Thread(target=lambda: self._db.eliminar_nota(nid) if hasattr(self._db, 'eliminar_nota') else None, daemon=True).start()
 
         return ft.Container(
             padding=ft.padding.symmetric(horizontal=14, vertical=12),
@@ -500,7 +308,6 @@ class NotesPage(BasePage):
                     ft.Column([
                         ft.Text(note.get("asignatura", ""), size=13, weight="bold", color="#0F172A"),
                         ft.Text(fecha, size=10, color="#64748B"),
-                        teacher_badge,
                     ], expand=True, spacing=1),
                     ft.PopupMenuButton(
                         icon=ft.Icons.MORE_VERT,
@@ -509,92 +316,12 @@ class NotesPage(BasePage):
                         items=[
                             ft.PopupMenuItem(icon=ft.Icons.DELETE_OUTLINE, text="Eliminar", on_click=_do_delete),
                         ]
-                    ) if can_delete else ft.Icon(ft.Icons.LOCK_OUTLINED, size=16, color="#94A3B8", tooltip="Nota asignada por profesor (Solo Lectura)")
+                    )
                 ], spacing=0, vertical_alignment=ft.CrossAxisAlignment.CENTER),
                 ft.Container(height=6),
-                ft.Text(comment, size=11, color="#64748B", max_lines=2, overflow=ft.TextOverflow.ELLIPSIS),
+                ft.Text(comment, size=11, color="#64748B", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
             ], spacing=0)
         )
-
-    def _show_assign_grade_modal(self, e=None):
-        """Modal exclusivo para que profesores asignen calificaciones a estudiantes."""
-        colors = self._get_theme_colors()
-        estudiantes = self._db.obtener_estudiantes() or []
-
-        if not estudiantes:
-            dlg = ft.AlertDialog(
-                title=ft.Text("Sin Estudiantes Registrados"),
-                content=ft.Text("No hay estudiantes registrados en la base de datos para asignar calificaciones."),
-                actions=[ft.TextButton("Entendido", on_click=lambda e: self.page.close(dlg))]
-            )
-            self.page.open(dlg)
-            return
-
-        student_options = [ft.dropdown.Option(key=str(s["id"]), text=f"{s['nombre']} ({s['email']})") for s in estudiantes]
-        student_dropdown = ft.Dropdown(label="Seleccionar Estudiante", options=student_options, border_radius=10)
-
-        subject_options = [ft.dropdown.Option(text=s) for s in self.SUBJECTS]
-        subject_dropdown = ft.Dropdown(label="Asignatura", options=subject_options, border_radius=10, value=self.SUBJECTS[0])
-
-        grade_field = ft.TextField(label="Calificación (0.0 - 5.0)", hint_text="Ej: 4.8", border_radius=10, keyboard_type=ft.KeyboardType.NUMBER)
-        comment_field = ft.TextField(label="Comentario pedagógico", hint_text="Ej: Excelente esfuerzo en el proyecto...", border_radius=10, multiline=True)
-
-        def _do_save_grade(e):
-            sid = student_dropdown.value
-            subj = subject_dropdown.value
-            gval = grade_field.value.strip()
-            comment = comment_field.value.strip()
-
-            if not sid:
-                student_dropdown.error_text = "Selecciona un estudiante"
-                try: student_dropdown.update()
-                except: pass
-                return
-
-            try:
-                gfloat = float(gval)
-                if not (0.0 <= gfloat <= 5.0): raise ValueError()
-            except:
-                grade_field.error_text = "Ingresa un número entre 0.0 y 5.0"
-                try: grade_field.update()
-                except: pass
-                return
-
-            fecha_actual = date.today().strftime("%Y-%m-%d")
-            res = self._db.guardar_nota(int(sid), self._uid, subj, gfloat, fecha_actual, comment)
-
-            self.page.close(dlg)
-            if res and res.get("ok"):
-                from services.navigation_service import NavigationController
-                NavigationController.cache.pop("notes", None)
-                self._load_notas()
-                self._refresh_ui_full()
-
-        dlg = ft.AlertDialog(
-            title=ft.Row([
-                ft.Icon(ft.Icons.SCHOOL, color="#10B981"),
-                ft.Text("Asignar Calificación a Estudiante", weight="bold", size=18)
-            ]),
-            content=ft.Container(
-                width=450,
-                height=360,
-                content=ft.Column([
-                    student_dropdown,
-                    ft.Container(height=8),
-                    subject_dropdown,
-                    ft.Container(height=8),
-                    grade_field,
-                    ft.Container(height=8),
-                    comment_field,
-                ], spacing=0, scroll=get_scroll_mode("AUTO"))
-            ),
-            actions=[
-                ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg)),
-                ft.ElevatedButton("Guardar Nota", bgcolor="#10B981", color="white", on_click=_do_save_grade)
-            ]
-        )
-        self.page.open(dlg)
-
 
     def _get_filtered_notes(self) -> list:
         """Filtra notas según el término de búsqueda actual."""
@@ -615,12 +342,19 @@ class NotesPage(BasePage):
             return ft.ResponsiveRow(
                 controls=[
                     ft.Container(
-                        padding=ft.padding.all(30),
+                        padding=ft.padding.symmetric(vertical=36, horizontal=20),
                         alignment=ft.alignment.center,
+                        col={"xs": 12, "sm": 12, "md": 12, "lg": 12},
                         content=ft.Column([
-                            ft.Icon(ft.Icons.SEARCH_OFF, size=36, color=ft.Colors.GREY_400),
-                            ft.Text("No se encontraron calificaciones", color=ft.Colors.GREY_500, size=12),
-                        ], horizontal_alignment="center")
+                            ft.Container(
+                                width=56, height=56, border_radius=28,
+                                bgcolor="#F1F5F9", alignment=ft.alignment.center,
+                                content=ft.Icon(ft.Icons.NOTE_ADD_OUTLINED, size=28, color="#64748B")
+                            ),
+                            ft.Container(height=10),
+                            ft.Text("Aún no tienes calificaciones registradas", color="#0F172A", size=14, weight=ft.FontWeight.BOLD),
+                            ft.Text("Tus calificaciones registradas o asignadas por tus profesores aparecerán aquí.", color="#64748B", size=12, text_align=ft.TextAlign.CENTER),
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER)
                     )
                 ]
             )
@@ -642,8 +376,124 @@ class NotesPage(BasePage):
         try: self.notes_grid.update()
         except: pass
 
+    def _open_add_note_dialog(self, e=None):
+        """Abre un modal interactivo para que los profesores asignen calificaciones a un estudiante de la comunidad."""
+        all_users = self._db.obtener_todos_los_usuarios() or []
+        students = [u for u in all_users if "profesor" not in str(u.get("rol", "")).lower() and u.get("id") != self._uid]
+        if not students:
+            students = [
+                {"id": "est_1", "name": "Juan Pérez", "email": "juan@estudiante.edu"},
+                {"id": "est_2", "name": "María Gómez", "email": "maria@estudiante.edu"},
+                {"id": "est_3", "name": "Carlos Rodríguez", "email": "carlos@estudiante.edu"},
+            ]
+
+        student_dropdown = ft.Dropdown(
+            label="Seleccionar Estudiante",
+            options=[
+                ft.dropdown.Option(
+                    key=str(s["id"]),
+                    text=f"👤 {s.get('name') or s.get('nombre') or s.get('email')} ({s.get('email', '')})"
+                ) for s in students
+            ],
+            value=str(students[0]["id"]),
+            border_radius=10,
+            expand=True,
+        )
+
+        subject_dropdown = ft.Dropdown(
+            label="Asignatura",
+            options=[ft.dropdown.Option(s) for s in self.SUBJECTS],
+            value=self.SUBJECTS[0],
+            border_radius=10,
+            expand=True,
+        )
+        
+        grade_input = ft.TextField(
+            label="Calificación (0.0 a 5.0)",
+            hint_text="Ej: 4.8",
+            keyboard_type=ft.KeyboardType.NUMBER,
+            border_radius=10,
+            autofocus=True,
+        )
+
+        comments_input = ft.TextField(
+            label="Comentarios u Observaciones",
+            hint_text="Ej: Excelente desempeño en tareas y examen final",
+            border_radius=10,
+            multiline=True,
+            min_lines=2,
+            max_lines=3,
+        )
+
+        def _save_note(e):
+            try:
+                raw_grade = grade_input.value.strip().replace(",", ".")
+                grade_val = float(raw_grade)
+                if not (0.0 <= grade_val <= 5.0):
+                    self._show_info("La calificación debe estar entre 0.0 y 5.0")
+                    return
+            except ValueError:
+                self._show_info("Por favor ingresa un número válido (ej: 4.5)")
+                return
+
+            sel_id = student_dropdown.value
+            sel_st = next((s for s in students if str(s["id"]) == str(sel_id)), students[0])
+            st_name = sel_st.get("name") or sel_st.get("nombre") or sel_st.get("email") or "Estudiante"
+
+            new_note = {
+                "id": f"nota_{int(time.time())}_{random.randint(100, 999)}",
+                "estudiante_id": sel_id,
+                "estudiante": st_name,
+                "asignatura": subject_dropdown.value,
+                "calificacion": round(grade_val, 1),
+                "fecha": date.today().isoformat(),
+                "comentarios": comments_input.value.strip() or "-",
+            }
+
+            self._notas.insert(0, new_note)
+            from services.navigation_service import NavigationController
+            NavigationController.cache["notes"] = copy.deepcopy(self._notas)
+
+            def _save_bg():
+                try:
+                    if hasattr(self._db, "guardar_nota"):
+                        self._db.guardar_nota(sel_id, new_note["asignatura"], new_note["calificacion"], new_note["comentarios"])
+                except: pass
+            threading.Thread(target=_save_bg, daemon=True).start()
+
+            self.page.close(dlg)
+            self._refresh_ui_full()
+            self._show_info(f"Calificación asignada a {st_name}: {subject_dropdown.value} ({round(grade_val, 1)})")
+
+        dlg = ft.AlertDialog(
+            modal=False,
+            title=ft.Row([
+                ft.Icon(ft.Icons.GRADE, color="#7C3AED", size=24),
+                ft.Text("Asignar Calificación a Estudiante", size=18, weight="bold")
+            ]),
+            content=ft.Container(
+                width=440, height=400,
+                content=ft.Column([
+                    ft.Text("Selecciona el estudiante y la asignatura para asignar la nota:", size=12, color="#64748B"),
+                    ft.Container(height=8),
+                    student_dropdown,
+                    ft.Container(height=8),
+                    subject_dropdown,
+                    ft.Container(height=8),
+                    grade_input,
+                    ft.Container(height=8),
+                    comments_input,
+                ], spacing=0, expand=True)
+            ),
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg)),
+                ft.ElevatedButton("Guardar Nota", bgcolor="#7C3AED", color="white", on_click=_save_note),
+            ]
+        )
+        self.page.open(dlg)
+
     def _show_expanded_notes_dialog(self):
-        """Modal expandido de calificaciones en 4 columnas (idéntico a la Imagen 2 de Figma)."""
+        """Modal expandido de calificaciones en 4 columnas."""
         colors = self._get_theme_colors()
 
         modal_grid_ref = ft.Ref[ft.Container]()
@@ -659,7 +509,8 @@ class NotesPage(BasePage):
                 self._get_filtered_notes(),
                 cols_config={"xs": 12, "sm": 6, "md": 4, "lg": 3}
             )
-            modal_grid_ref.current.update()
+            try: modal_grid_ref.current.update()
+            except: pass
             self._refresh_notes_view()
             try: self.notes_grid.update()
             except: pass
@@ -706,11 +557,10 @@ class NotesPage(BasePage):
         dlg = ft.AlertDialog(
             modal=False,
             bgcolor=colors["surface"],
-
             content_padding=ft.padding.all(0),
             content=ft.Container(
-                width=920,
-                height=600,
+                width=940,
+                height=620,
                 bgcolor=colors["surface"],
                 padding=ft.padding.all(24),
                 border_radius=16,
@@ -731,95 +581,235 @@ class NotesPage(BasePage):
         NavigationController.update_view("Calendario")
 
     def _refresh_sidebar_view(self):
-        pass
+        """Construye los eventos próximos para la barra lateral derecha leyendo eventos de la cache y de la BD."""
+        colors = self._get_theme_colors()
 
-    def _build_left_sidebar(self, colors):
-        """Sidebar izquierda de navegación estilo Figma."""
+        events_list = ft.Column([
+            ft.Text("Próximos eventos", size=15, weight="bold", color="#0F172A"),
+            ft.Container(height=8),
+        ], spacing=8)
+
         from services.navigation_service import NavigationController
+        cached_events = NavigationController.cache.get("events", [])
+        if cached_events:
+            real_events = copy.deepcopy(cached_events)
+        else:
+            real_events = self._db.obtener_eventos(self._uid) if self._uid else []
+            if real_events:
+                NavigationController.cache["events"] = copy.deepcopy(real_events)
 
-        def nav_item(label, icon, active=False, target="Notas"):
-            return ft.Container(
-                content=ft.Row([
-                    ft.Icon(icon, color=ft.Colors.WHITE if active else "#475569", size=18),
-                    ft.Text(label, color=ft.Colors.WHITE if active else "#1F2937",
-                            size=13, weight=ft.FontWeight.W_600 if active else ft.FontWeight.NORMAL),
-                ], spacing=10),
-                bgcolor="#0A1E3D" if active else ft.Colors.TRANSPARENT,
-                border_radius=8,
-                padding=ft.padding.symmetric(horizontal=14, vertical=10),
-                on_click=lambda e, t=target: NavigationController.update_view(t),
+        today = date.today()
+        start_curr_week = today - timedelta(days=today.weekday())
+        end_next_week = start_curr_week + timedelta(days=13)
+        months_es = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+        week_events = []
+        if real_events:
+            for ev in real_events:
+                try:
+                    raw_dt = ev.get("fecha_inicio") or ev.get("fecha")
+                    if not raw_dt: continue
+
+                    ev_date = None
+                    if isinstance(raw_dt, datetime):
+                        ev_date = raw_dt.date()
+                    elif isinstance(raw_dt, date):
+                        ev_date = raw_dt
+                    elif isinstance(raw_dt, str):
+                        clean_str = raw_dt.split("T")[0].strip()
+                        for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                            try:
+                                ev_date = datetime.strptime(clean_str[:10], fmt).date()
+                                break
+                            except Exception: pass
+                        if not ev_date:
+                            try: ev_date = date.fromisoformat(clean_str[:10])
+                            except Exception: pass
+
+                    if ev_date and start_curr_week <= ev_date <= end_next_week:
+                        tipo = ev.get("tipo_evento", "General")
+                        tipo_lower = str(tipo).lower()
+                        title_lower = str(ev.get("titulo", "")).lower()
+
+                        if "examen" in tipo_lower or "examen" in title_lower:
+                            badge_color = "#EF4444"
+                            badge_bg = "#FEE2E2"
+                        else:
+                            badge_color = "#3B82F6"
+                            badge_bg = "#DBEAFE"
+
+                        date_str = f"{ev_date.day} de {months_es[ev_date.month - 1]}"
+
+                        week_events.append({
+                            "title": ev.get("titulo", "Evento"),
+                            "date": date_str,
+                            "time": "Todo el día",
+                            "color": badge_color,
+                            "bg": badge_bg,
+                            "ev_date": ev_date
+                        })
+                except Exception:
+                    continue
+
+        week_events.sort(key=lambda x: x["ev_date"])
+
+        if not week_events:
+            events_list.controls.append(
+                ft.Container(
+                    padding=ft.padding.symmetric(vertical=16, horizontal=10),
+                    alignment=ft.alignment.center,
+                    bgcolor="#F8FAFC",
+                    border_radius=10,
+                    border=ft.border.all(1, "#E2E8F0"),
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=18, color="#10B981"),
+                        ft.Text("bien, no tienes eventos por ahora", size=12, color=colors["text_secondary"], weight=ft.FontWeight.W_500),
+                    ], spacing=6, alignment=ft.MainAxisAlignment.CENTER)
+                )
             )
+        else:
+            for ev in week_events[:4]:
+                events_list.controls.append(
+                    ft.Container(
+                        padding=ft.padding.all(10),
+                        bgcolor=colors["surface"],
+                        border_radius=10,
+                        border=ft.border.all(1, "#F1F5F9"),
+                        content=ft.Row([
+                            ft.Container(
+                                width=32, height=32, border_radius=8,
+                                bgcolor=ev["bg"],
+                                alignment=ft.alignment.center,
+                                content=ft.Icon(ft.Icons.CALENDAR_TODAY, color=ev["color"], size=16)
+                            ),
+                            ft.Container(width=10),
+                            ft.Column([
+                                ft.Text(ev["title"], size=12, weight="bold", color="#0F172A", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                                ft.Text(ev["date"], size=9.5, color="#64748B"),
+                            ], spacing=1, expand=True),
+                        ], spacing=0, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+                    )
+                )
 
-        promedio_card = ft.Container(
-            padding=ft.padding.all(14),
-            bgcolor=colors["surface"],
-            border_radius=14,
-            border=ft.border.all(1, "#E2E8F0"),
-            content=ft.Column([
-                ft.Row([
-                    ft.Icon(ft.Icons.SCHOOL, color="#8B5CF6", size=18),
-                    ft.Text("Promedio General", size=11, weight="bold", color="#0F172A"),
-                ], spacing=6),
-                ft.Container(height=4),
-                ft.Text("4.30", size=24, weight="bold", color="#8B5CF6"),
-                ft.Row([
-                    ft.Icon(ft.Icons.ARROW_UPWARD, color="#10B981", size=12),
-                    ft.Text("0.25 vs mes anterior", size=10, color="#64748B"),
-                ], spacing=2),
-                ft.Container(height=6),
-                ft.ProgressBar(value=0.86, color="#8B5CF6", bgcolor="#F3E8FF", height=6),
-                ft.Container(height=6),
-                ft.Row([
-                    ft.Container(width=8, height=8, border_radius=4, bgcolor="#10B981"),
-                    ft.Text("Buen desempeño", size=10, color="#475569", weight="w500"),
-                ], spacing=6)
-            ], spacing=0)
+        events_list.controls.append(ft.Container(height=8))
+        events_list.controls.append(
+            ft.OutlinedButton(
+                text="Ver Calendario Completo",
+                on_click=self._go_to_calendar,
+                style=ft.ButtonStyle(
+                    color="#475569",
+                    side=ft.BorderSide(1, "#E2E8F0"),
+                    shape=ft.RoundedRectangleBorder(radius=8),
+                ),
+                height=34,
+            )
         )
 
-        return ft.Container(
-            width=200,
-            bgcolor=colors["surface"],
-            border=ft.border.only(right=ft.BorderSide(1, "#E2E8F0")),
-            padding=ft.padding.all(16),
-            content=ft.Column([
-                nav_item("Calificaciones", ft.Icons.BAR_CHART_OUTLINED, active=True, target="Notas"),
-                nav_item("Asignaturas", ft.Icons.BOOK_OUTLINED, target="Notas"),
-                nav_item("Calendario", ft.Icons.CALENDAR_MONTH_OUTLINED, target="Calendario"),
-                nav_item("Mensajes", ft.Icons.CHAT_OUTLINED, target="Mensajeria"),
-                nav_item("Ajustes", ft.Icons.SETTINGS_OUTLINED, target="Perfil"),
-                ft.Container(expand=True),
-                promedio_card
-            ], spacing=6)
-        )
+        self.sidebar_container.content = events_list
 
     def _build_right_sidebar(self, colors):
-        """Sidebar derecha simplificada con consejo del día y consejos académicos."""
-        selected_tip = random.choice(self.TIPS_LIST)
-        tip_card = ft.Container(
+        """Sidebar derecha con: próximos eventos, distribución y consejo."""
+        total = len(self._notas) or 0
+        excellent = len([n for n in self._notas if float(n.get("calificacion", 0)) >= 4.5])
+        good      = len([n for n in self._notas if 3.0 <= float(n.get("calificacion", 0)) < 4.5])
+        low       = len([n for n in self._notas if float(n.get("calificacion", 0)) < 3.0])
+
+        def pie_section(value, color):
+            return ft.PieChartSection(
+                value=value if value > 0 else 0.001,
+                color=color,
+                radius=20,
+            )
+
+        pie = ft.PieChart(
+            sections=[
+                pie_section(excellent, "#10B981"),
+                pie_section(good, "#8B5CF6"),
+                pie_section(low, "#EF4444"),
+            ],
+            sections_space=2,
+            center_space_radius=32,
+            expand=True,
+        )
+
+        chart_stack = ft.Stack([
+            pie,
+            ft.Container(
+                content=ft.Column([
+                    ft.Text(str(total), size=16, weight="bold", color="#0F172A"),
+                    ft.Text("Total", size=9, color="#64748B"),
+                ], alignment=ft.MainAxisAlignment.CENTER, spacing=0,
+                   horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                alignment=ft.alignment.center,
+            )
+        ], width=88, height=88)
+
+        def legend_row(color, label):
+            return ft.Row([
+                ft.Container(width=8, height=8, border_radius=2, bgcolor=color),
+                ft.Container(width=4),
+                ft.Text(label, size=9.5, color="#0F172A", expand=True),
+            ])
+
+        total_d = total if total > 0 else 1
+        distribution_card = ft.Container(
             padding=ft.padding.all(14),
             bgcolor=colors["surface"],
             border_radius=14,
             border=ft.border.all(1, "#E2E8F0"),
             content=ft.Column([
+                ft.Text("Distribución de calificaciones", size=13,
+                        weight="bold", color="#0F172A"),
+                ft.Container(height=10),
                 ft.Row([
-                    ft.Icon(ft.Icons.LIGHTBULB_OUTLINE, color="#8B5CF6", size=20),
-                    ft.Text("Consejo de Estudio", size=13, weight="bold", color="#0F172A"),
-                ], spacing=6),
-                ft.Container(height=8),
-                ft.Text(selected_tip, size=11, color="#64748B"),
+                    chart_stack,
+                    ft.Container(width=6),
+                    ft.Column([
+                        legend_row("#10B981", f"Excelentes (4.5 - 5.0)\n{excellent} ({excellent/total_d*100:.1f}%)"),
+                        legend_row("#8B5CF6", f"Buenas (3.0 - 4.4) {good}\n({good/total_d*100:.1f}%)"),
+                        legend_row("#EF4444", f"Bajas (0 - 2.9) {low}\n({low/total_d*100:.1f}%)"),
+                    ], spacing=6, expand=True)
+                ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
             ], spacing=0)
         )
 
+        selected_tip = random.choice(self.TIPS_LIST)
+        tip_card = ft.Container(
+            padding=ft.padding.all(12),
+            bgcolor="#F8FAFC",
+            border_radius=12,
+            border=ft.border.all(1, "#E2E8F0"),
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.LIGHTBULB_OUTLINE, color="#8B5CF6", size=18),
+                    ft.Text("Consejo del día", size=12, weight="bold", color="#0F172A"),
+                ], spacing=6),
+                ft.Container(height=6),
+                ft.Text(selected_tip, size=10.5, color="#64748B"),
+            ], spacing=0)
+        )
+
+        events_card = ft.Container(
+            padding=ft.padding.all(14),
+            bgcolor=colors["surface"],
+            border_radius=14,
+            border=ft.border.all(1, "#E2E8F0"),
+            content=self.sidebar_container,
+        )
+
         return ft.Container(
-            width=240,
+            width=260,
             bgcolor=colors["surface"],
             border=ft.border.only(left=ft.BorderSide(1, "#E2E8F0")),
             padding=ft.padding.all(16),
             content=ft.Column([
+                events_card,
+                ft.Container(height=12),
+                distribution_card,
+                ft.Container(height=12),
                 tip_card,
             ], spacing=0, scroll=get_scroll_mode("AUTO"))
         )
-
 
     def build(self) -> ft.Control:
         self._load_notas()
@@ -831,10 +821,8 @@ class NotesPage(BasePage):
         self._refresh_notes_view()
         self._refresh_sidebar_view()
 
-        left_sidebar = self._build_left_sidebar(colors)
         right_sidebar = self._build_right_sidebar(colors)
 
-        # Sección "Tus calificaciones"
         self.main_search_field = ft.TextField(
             hint_text="Buscar asignatura...",
             prefix_icon=ft.Icons.SEARCH,
@@ -847,23 +835,16 @@ class NotesPage(BasePage):
             content_padding=ft.padding.symmetric(horizontal=10, vertical=6),
         )
 
-        header_actions = [
-            ft.IconButton(
-                icon=ft.Icons.ZOOM_OUT_MAP,
-                icon_size=18,
-                icon_color="#64748B",
-                tooltip="Expandir",
-                on_click=lambda e: self._show_expanded_notes_dialog(),
-            )
-        ]
-        if self._rol == "profesor":
-            header_actions.insert(0, ft.ElevatedButton(
-                icon=ft.Icons.ADD,
-                text="Asignar Calificación",
-                bgcolor="#10B981",
-                color="white",
-                on_click=self._show_assign_grade_modal
-            ))
+        is_profesor = "profesor" in str(self._rol).lower() or "docente" in str(self._rol).lower() or "maestro" in str(self._rol).lower() or "admin" in str(self._rol).lower() or self._user.get("es_profesor", False)
+
+        add_note_btn = ft.ElevatedButton(
+            "➕ Agregar Nota",
+            bgcolor="#7C3AED",
+            color=ft.Colors.WHITE,
+            height=36,
+            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+            on_click=self._open_add_note_dialog,
+        ) if is_profesor else ft.Container()
 
         tus_calificaciones_card = ft.Container(
             padding=ft.padding.all(16),
@@ -872,11 +853,18 @@ class NotesPage(BasePage):
             border=ft.border.all(1, "#E2E8F0"),
             content=ft.Column([
                 ft.Row([
-                    ft.Text("Notas de Estudiantes" if self._rol == "profesor" else "Tus calificaciones", size=15, weight="bold", color="#0F172A"),
+                    ft.Text("Gestión de Calificaciones" if is_profesor else "Tus calificaciones", size=15, weight="bold", color="#0F172A"),
                     ft.Container(expand=True),
-                    ft.Row(controls=header_actions, spacing=8),
+                    add_note_btn,
+                    ft.Container(width=6 if is_profesor else 0),
+                    ft.IconButton(
+                        icon=ft.Icons.ZOOM_OUT_MAP,
+                        icon_size=18,
+                        icon_color="#64748B",
+                        tooltip="Expandir",
+                        on_click=lambda e: self._show_expanded_notes_dialog(),
+                    ),
                 ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-
                 ft.Container(height=8),
                 self.main_search_field,
                 ft.Container(height=12),
@@ -890,31 +878,24 @@ class NotesPage(BasePage):
             self.chart_container,
             ft.Container(height=16),
             tus_calificaciones_card,
-        ], spacing=0, expand=True)
+        ], spacing=0, expand=True, scroll=get_scroll_mode("AUTO"))
 
-        is_mob = self.is_mobile()
-        if is_mob:
+        is_mobile = self.page.width < 900
+        if is_mobile:
             main_body = ft.Container(
                 expand=True,
-                padding=ft.padding.all(12),
-                content=ft.Column([center_content, right_sidebar], scroll=get_scroll_mode(self.page))
+                padding=ft.padding.all(16),
+                content=ft.Column([center_content, right_sidebar], scroll=get_scroll_mode("AUTO"))
             )
         else:
             main_body = ft.Container(
                 expand=True,
                 padding=ft.padding.all(20),
                 content=ft.Row([
-                    left_sidebar,
-                    ft.Container(width=16),
                     ft.Container(expand=True, content=center_content),
                     ft.Container(width=16),
                     right_sidebar,
                 ], spacing=0, expand=True)
             )
 
-        controls = [navbar, main_body]
-        if is_mob:
-            controls.append(self._build_bottom_nav("Notas"))
-
-        return ft.Column(controls=controls, expand=True, spacing=0)
-
+        return ft.Column(controls=[navbar, main_body], expand=True, spacing=0)

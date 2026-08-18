@@ -587,6 +587,14 @@ class StudyMethodsPage(BasePage):
         key = info["key"]
         navbar = self._build_navbar(f"Aplicar: {title}")
 
+        from services.navigation_service import NavigationController
+        if key == "flashcards":
+            NavigationController.update_view("Flashcards")
+            return
+        elif key == "pomodoro":
+            NavigationController.update_view("Pomodoro")
+            return
+
         def _back(e):
             self._timer_running = False
             self._current_view = "detail"
@@ -595,7 +603,6 @@ class StudyMethodsPage(BasePage):
         def _finish(e):
             self._timer_running = False
             self._current_view = "list"
-            from services.navigation_service import NavigationController
             NavigationController.update_view("Tecnicas")
 
         # ─── HERRAMIENTA 1: MAPAS MENTALES ESTILO NOTEBOOKLM CON IA ─────────

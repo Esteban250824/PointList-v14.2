@@ -79,15 +79,18 @@ class NotesPage(BasePage):
         self._stop_sync = False
 
     def _load_notas(self):
-        """Carga notas desde BD o caché. Si está vacío, usa notas de demostración de Figma."""
+        """Carga notas desde BD o caché. Si el usuario está registrado y no tiene notas, la lista permanece vacía (0 notas)."""
         from services.navigation_service import NavigationController
-        cached_notes = NavigationController.cache.get("notes", [])
-        if cached_notes:
+        cached_notes = NavigationController.cache.get("notes", None)
+        if cached_notes is not None:
             self._notas = copy.deepcopy(cached_notes)
         else:
-            db_notes = self._db.obtener_notas(self._uid) if self._uid else []
-            if db_notes:
-                self._notas = copy.deepcopy(db_notes)
+            if self._uid:
+                try:
+                    db_notes = self._db.obtener_notas(self._uid)
+                    self._notas = copy.deepcopy(db_notes) if db_notes is not None else []
+                except:
+                    self._notas = []
             else:
                 self._notas = copy.deepcopy(self.DEFAULT_NOTES)
             NavigationController.cache["notes"] = copy.deepcopy(self._notas)
@@ -145,7 +148,12 @@ class NotesPage(BasePage):
     def _refresh_kpi_view(self):
         """Actualiza los 4 KPIs superiores."""
         if not self._notas:
-            self.kpi_row.content = ft.Container(height=100)
+            self.kpi_row.content = ft.Row([
+                self._create_kpi_card(ft.Icons.BOOK_ROUNDED, 0, "Asignaturas", "#8B5CF6", "Inscritas"),
+                self._create_kpi_card(ft.Icons.SHOW_CHART, "0.0", "Promedio General", "#10B981", "Sobre 5.0"),
+                self._create_kpi_card(ft.Icons.BAR_CHART, "-", "Mejor Calificación", "#3B82F6", "Sin datos"),
+                self._create_kpi_card(ft.Icons.TRENDING_DOWN, "-", "Más baja", "#EF4444", "Sin datos"),
+            ], spacing=12, expand=True)
             return
         
         total_subjects = len(set(n.get("asignatura") for n in self._notas))
@@ -170,7 +178,15 @@ class NotesPage(BasePage):
     def _create_bar_chart(self):
         """Crea gráfica de barras por asignatura idéntica a Figma."""
         if not self._notas:
-            return ft.Container(height=240)
+            return ft.Container(
+                height=220,
+                alignment=ft.alignment.center,
+                content=ft.Column([
+                    ft.Icon(ft.Icons.BAR_CHART_OUTLINED, size=36, color="#94A3B8"),
+                    ft.Container(height=6),
+                    ft.Text("Sin calificaciones para graficar promedios", color="#94A3B8", size=13, weight="w500")
+                ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+            )
         
         subject_avg = {}
         for note in self._notas:
@@ -326,12 +342,19 @@ class NotesPage(BasePage):
             return ft.ResponsiveRow(
                 controls=[
                     ft.Container(
-                        padding=ft.padding.all(30),
+                        padding=ft.padding.symmetric(vertical=36, horizontal=20),
                         alignment=ft.alignment.center,
+                        col={"xs": 12, "sm": 12, "md": 12, "lg": 12},
                         content=ft.Column([
-                            ft.Icon(ft.Icons.SEARCH_OFF, size=36, color=ft.Colors.GREY_400),
-                            ft.Text("No se encontraron calificaciones", color=ft.Colors.GREY_500, size=12),
-                        ], horizontal_alignment="center")
+                            ft.Container(
+                                width=56, height=56, border_radius=28,
+                                bgcolor="#F1F5F9", alignment=ft.alignment.center,
+                                content=ft.Icon(ft.Icons.NOTE_ADD_OUTLINED, size=28, color="#64748B")
+                            ),
+                            ft.Container(height=10),
+                            ft.Text("Aún no tienes calificaciones registradas", color="#0F172A", size=14, weight=ft.FontWeight.BOLD),
+                            ft.Text("Tus calificaciones registradas o asignadas por tus profesores aparecerán aquí.", color="#64748B", size=12, text_align=ft.TextAlign.CENTER),
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER)
                     )
                 ]
             )
@@ -856,7 +879,7 @@ class NotesPage(BasePage):
             self.chart_container,
             ft.Container(height=16),
             tus_calificaciones_card,
-        ], spacing=0, expand=True)
+        ], spacing=0, expand=True, scroll=get_scroll_mode("AUTO"))
 
         is_mobile = self.page.width < 900
         if is_mobile:
