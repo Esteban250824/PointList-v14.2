@@ -906,10 +906,10 @@ class NotesPage(BasePage):
         )
 
         return ft.Container(
-            width=260,
-            bgcolor=colors["surface"],
-            border=ft.border.only(left=ft.BorderSide(1, "#E2E8F0")),
-            padding=ft.padding.all(16),
+            width=270,
+            bgcolor=ft.Colors.TRANSPARENT,
+            border=None,
+            padding=ft.padding.all(12),
             content=ft.Column([
                 events_card,
                 ft.Container(height=12),
