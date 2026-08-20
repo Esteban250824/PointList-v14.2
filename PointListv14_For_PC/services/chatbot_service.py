@@ -21,7 +21,7 @@ else:
     load_dotenv()
 
 def get_groq_api_key(): return os.getenv("GROQ_API_KEY", "")
-def get_groq_model(): return os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+def get_groq_model(): return os.getenv("GROQ_MODEL", "groq/compound")
 def get_gemini_api_key(): return os.getenv("GEMINI_API_KEY", "")
 def get_gemini_model(): return os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
@@ -278,7 +278,7 @@ class ChatBotService:
         current_history.append({"role": "user", "content": user_message})
         messages = [{"role": "system", "content": custom_system_prompt}] + current_history[-10:]
 
-        models_to_try = [get_groq_model(), "llama-3.3-70b-versatile", "llama-3.3-70b-specdec", "llama3-70b-8192", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
+        models_to_try = [get_groq_model(), "groq/compound", "groq/compound-mini", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"]
         assistant_message = None
 
         if self._groq_client:
