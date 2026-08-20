@@ -1,9 +1,9 @@
 """
-views/pages/flashcards_page.py - v14.2
+views/pages/flashcards_page.py - v15.0
 PointList Gestor & Entrenador de Tarjetas de Memoria (Flashcards) NotebookLM:
-- Organización de mazos por asignatura (Biología, Historia, Matemáticas, Idiomas, etc.)
-- Modo Estudio Interactivo (Active Recall) con volteo 3D, pistas mnemotécnicas y evaluación de dificultad SM-2
-- Generador masivo de mazos inteligentes con IA (Gemini 2.0 Flash / Groq Llama 3.3)
+- Botones e interacción reactiva instantánea en tiempo real (Siguiente, Anterior, Voltear, Dificultad SM-2)
+- Selección de mazo por chips con actualización directa
+- Generador masivo de mazos inteligentes con IA NotebookLM
 """
 
 import flet as ft
@@ -13,7 +13,7 @@ from views.pages.base_page import BasePage
 from utils.flet_compat import get_scroll_mode
 
 class FlashcardsPage(BasePage):
-    """Página de Gestión y Estudio de Flashcards NotebookLM v14.2."""
+    """Página de Gestión y Estudio de Flashcards NotebookLM v15.0."""
 
     DEFAULT_DECKS = {
         "Biología General": [
@@ -72,6 +72,17 @@ class FlashcardsPage(BasePage):
         self.selected_deck_name = "Biología General"
         self.current_card_idx = 0
         self.is_flipped = False
+        
+        # Refs reactivas
+        self.card_badge_text = ft.Ref[ft.Text]()
+        self.card_status_text = ft.Ref[ft.Text]()
+        self.card_main_text = ft.Ref[ft.Text]()
+        self.card_hint_text = ft.Ref[ft.Text]()
+        self.card_container_ref = ft.Ref[ft.Container]()
+        self.chips_row_ref = ft.Ref[ft.Row]()
+        self.btn_prev_ref = ft.Ref[ft.IconButton]()
+        self.btn_next_ref = ft.Ref[ft.IconButton]()
+
         self.ai_loading = ft.ProgressRing(visible=False, width=20, height=20, stroke_width=2, color="#0284C7")
         self.ai_topic_field = ft.TextField(hint_text="Ingresa una asignatura para generar mazo con IA...", border_radius=10, expand=True)
 
@@ -84,6 +95,78 @@ class FlashcardsPage(BasePage):
             return {"pregunta": "Sin tarjetas", "respuesta": "Agrega nuevas tarjetas para comenzar a estudiar.", "pista": "Mazo vacío."}
         idx = max(0, min(self.current_card_idx, len(deck) - 1))
         return deck[idx]
+
+    def _update_card_display(self):
+        """Actualiza reactivamente el contenido de la tarjeta en pantalla."""
+        deck = self._get_current_deck()
+        total = len(deck)
+        card = self._get_current_card()
+
+        badge_txt = "💡 RESPUESTA EXPLICATIVA" if self.is_flipped else "❓ PREGUNTA CLAVE"
+        main_txt = card.get("respuesta" if self.is_flipped else "pregunta", "")
+        hint_txt = card.get("pista", "Piensa en la clave mnemotécnica.")
+        card_bg = "#F0FDF4" if self.is_flipped else "#F0F9FF"
+        card_border = "#86EFAC" if self.is_flipped else "#BAE6FD"
+        badge_bg = "#DCFCE7" if self.is_flipped else "#E0F2FE"
+        title_col = "#047857" if self.is_flipped else "#0369A1"
+
+        try:
+            if self.card_badge_text.current:
+                self.card_badge_text.current.value = badge_txt
+                self.card_badge_text.current.color = title_col
+                self.card_badge_text.current.parent.bgcolor = badge_bg
+                self.card_badge_text.current.update()
+                self.card_badge_text.current.parent.update()
+
+            if self.card_status_text.current:
+                self.card_status_text.current.value = f"Tarjeta {self.current_card_idx + 1} de {total}"
+                self.card_status_text.current.update()
+
+            if self.card_main_text.current:
+                self.card_main_text.current.value = main_txt
+                self.card_main_text.current.update()
+
+            if self.card_hint_text.current:
+                self.card_hint_text.current.value = f"Pista NotebookLM: {hint_txt}"
+                self.card_hint_text.current.update()
+
+            if self.card_container_ref.current:
+                self.card_container_ref.current.bgcolor = card_bg
+                self.card_container_ref.current.border = ft.border.all(2, card_border)
+                self.card_container_ref.current.update()
+
+            if self.btn_prev_ref.current:
+                self.btn_prev_ref.current.disabled = (self.current_card_idx == 0)
+                self.btn_prev_ref.current.update()
+
+            if self.btn_next_ref.current:
+                self.btn_next_ref.current.disabled = (self.current_card_idx >= total - 1)
+                self.btn_next_ref.current.update()
+        except: pass
+
+    def _toggle_flip(self, e=None):
+        self.is_flipped = not self.is_flipped
+        self._update_card_display()
+
+    def _next_card(self, e=None):
+        deck = self._get_current_deck()
+        if self.current_card_idx < len(deck) - 1:
+            self.current_card_idx += 1
+            self.is_flipped = False
+            self._update_card_display()
+
+    def _prev_card(self, e=None):
+        if self.current_card_idx > 0:
+            self.current_card_idx -= 1
+            self.is_flipped = False
+            self._update_card_display()
+
+    def _select_deck(self, deck_name: str):
+        self.selected_deck_name = deck_name
+        self.current_card_idx = 0
+        self.is_flipped = False
+        from services.navigation_service import NavigationController
+        NavigationController.update_view("Flashcards", force_rebuild=True)
 
     def _generate_deck_ai(self, e=None):
         topic = self.ai_topic_field.value.strip()
@@ -120,17 +203,10 @@ class FlashcardsPage(BasePage):
         deck = self._get_current_deck()
         total_cards = len(deck)
 
-        # ─── HEADER KPI BAR ──────────────────────────────────────────────────
+        # ─── HEADER MAZOS CHIPS ─────────────────────────────────────────────
         deck_chips = []
         for name in self.decks.keys():
-            is_sel = name == self.selected_deck_name
-            def _select_d(n=name):
-                self.selected_deck_name = n
-                self.current_card_idx = 0
-                self.is_flipped = False
-                from services.navigation_service import NavigationController
-                NavigationController.update_view("Flashcards", force_rebuild=True)
-
+            is_sel = (name == self.selected_deck_name)
             deck_chips.append(
                 ft.Container(
                     padding=ft.padding.symmetric(horizontal=14, vertical=8),
@@ -138,7 +214,7 @@ class FlashcardsPage(BasePage):
                     border_radius=12,
                     border=ft.border.all(1, "#0284C7" if is_sel else "#E2E8F0"),
                     ink=True,
-                    on_click=lambda e, n=name: _select_d(n),
+                    on_click=lambda e, n=name: self._select_deck(n),
                     content=ft.Row([
                         ft.Icon(ft.Icons.STYLE, color="white" if is_sel else "#0284C7", size=16),
                         ft.Text(name, size=13, weight="bold" if is_sel else "normal", color="white" if is_sel else colors["text"]),
@@ -153,33 +229,15 @@ class FlashcardsPage(BasePage):
             )
 
         # ─── TARJETA DE ESTUDIO FLIP CARD ────────────────────────────────────
-        def _toggle_flip(e=None):
-            self.is_flipped = not self.is_flipped
-            from services.navigation_service import NavigationController
-            NavigationController.update_view("Flashcards", force_rebuild=True)
-
-        def _next_card(e=None):
-            if self.current_card_idx < total_cards - 1:
-                self.current_card_idx += 1
-                self.is_flipped = False
-                from services.navigation_service import NavigationController
-                NavigationController.update_view("Flashcards", force_rebuild=True)
-
-        def _prev_card(e=None):
-            if self.current_card_idx > 0:
-                self.current_card_idx -= 1
-                self.is_flipped = False
-                from services.navigation_service import NavigationController
-                NavigationController.update_view("Flashcards", force_rebuild=True)
-
         card_bg = "#F0FDF4" if self.is_flipped else "#F0F9FF"
         card_border = "#86EFAC" if self.is_flipped else "#BAE6FD"
         title_color = "#047857" if self.is_flipped else "#0369A1"
-        badge_text = "💡 RESPUESTA EXPLICATIVA" if self.is_flipped else "❓ PREGUNTA CLAVE"
+        badge_text_str = "💡 RESPUESTA EXPLICATIVA" if self.is_flipped else "❓ PREGUNTA CLAVE"
         main_content = current_card.get("respuesta" if self.is_flipped else "pregunta", "")
         hint_content = current_card.get("pista", "Piensa en la clave mnemotécnica.")
 
         flashcard_widget = ft.Container(
+            ref=self.card_container_ref,
             height=280,
             padding=24,
             bgcolor=card_bg,
@@ -187,19 +245,19 @@ class FlashcardsPage(BasePage):
             border=ft.border.all(2, card_border),
             shadow=ft.BoxShadow(blur_radius=16, color=ft.Colors.BLACK12, offset=ft.Offset(0, 6)),
             ink=True,
-            on_click=_toggle_flip,
+            on_click=self._toggle_flip,
             content=ft.Column([
                 ft.Row([
                     ft.Container(
                         padding=ft.padding.symmetric(horizontal=10, vertical=4),
                         bgcolor="#DCFCE7" if self.is_flipped else "#E0F2FE",
                         border_radius=8,
-                        content=ft.Text(badge_text, size=11, weight="bold", color=title_color)
+                        content=ft.Text(ref=self.card_badge_text, value=badge_text_str, size=11, weight="bold", color=title_color)
                     ),
-                    ft.Text(f"Tarjeta {self.current_card_idx + 1} de {total_cards}", size=12, color="#64748B", weight="bold")
+                    ft.Text(ref=self.card_status_text, value=f"Tarjeta {self.current_card_idx + 1} de {total_cards}", size=12, color="#64748B", weight="bold")
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Container(height=16),
-                ft.Text(main_content, size=16, weight="bold", color="#0F172A", text_align=ft.TextAlign.CENTER, expand=True),
+                ft.Text(ref=self.card_main_text, value=main_content, size=16, weight="bold", color="#0F172A", text_align=ft.TextAlign.CENTER, expand=True),
                 ft.Container(height=12),
                 ft.Container(
                     padding=ft.padding.symmetric(horizontal=12, vertical=6),
@@ -207,7 +265,7 @@ class FlashcardsPage(BasePage):
                     border_radius=8,
                     content=ft.Row([
                         ft.Icon(ft.Icons.LIGHTBULB_OUTLINE, color="#D97706", size=16),
-                        ft.Text(f"Pista NotebookLM: {hint_content}", size=12, color="#475569", italic=True, expand=True)
+                        ft.Text(ref=self.card_hint_text, value=f"Pista NotebookLM: {hint_content}", size=12, color="#475569", italic=True, expand=True)
                     ], spacing=6)
                 ),
                 ft.Text("(Toca la tarjeta para voltear)", size=10, color="#94A3B8", text_align=ft.TextAlign.CENTER)
@@ -216,9 +274,9 @@ class FlashcardsPage(BasePage):
 
         # ─── CONTROLES DE NAVEGACIÓN Y DIFICULTAD SM-2 ───────────────────────
         controls_row = ft.Row([
-            ft.IconButton(ft.Icons.ARROW_BACK_IOS_ROUNDED, icon_color="#0284C7", on_click=_prev_card, disabled=self.current_card_idx == 0),
-            ft.ElevatedButton("🔄 Voltear Tarjeta", bgcolor="#0284C7", color="white", height=42, on_click=_toggle_flip),
-            ft.IconButton(ft.Icons.ARROW_FORWARD_IOS_ROUNDED, icon_color="#0284C7", on_click=_next_card, disabled=self.current_card_idx >= total_cards - 1),
+            ft.IconButton(ref=self.btn_prev_ref, icon=ft.Icons.ARROW_BACK_IOS_ROUNDED, icon_color="#0284C7", on_click=self._prev_card, disabled=self.current_card_idx == 0),
+            ft.ElevatedButton("🔄 Voltear Tarjeta", bgcolor="#0284C7", color="white", height=42, on_click=self._toggle_flip),
+            ft.IconButton(ref=self.btn_next_ref, icon=ft.Icons.ARROW_FORWARD_IOS_ROUNDED, icon_color="#0284C7", on_click=self._next_card, disabled=self.current_card_idx >= total_cards - 1),
         ], alignment=ft.MainAxisAlignment.CENTER, spacing=16)
 
         difficulty_row = ft.Row([
