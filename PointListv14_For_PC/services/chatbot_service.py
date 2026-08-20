@@ -256,8 +256,11 @@ class ChatBotService:
     def send_message(
         self,
         user_message: str,
+        uid: str = "",
+        session_id: str = "",
         history: Optional[list] = None,
         custom_system_prompt: str = SYSTEM_PROMPT,
+        attached_files: Optional[list] = None,
         max_tokens: int = 1000,
     ) -> str:
         """Envia un mensaje al ChatBot IA con soporte hibrido Groq / Gemini 2.0 Flash / Fallback."""
