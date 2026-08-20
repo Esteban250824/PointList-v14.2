@@ -1,0 +1,95 @@
+/* 
+ * css/styles.css - Estilos y Tokens de Diseño para PointList v14 Web
+ * Réplica exacta del sistema de colores, tema oscuro/claro y Figma UI de la versión PC.
+ */
+
+:root {
+  --bg-main: #F9FAFB;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --text-main: #111827;
+  --text-muted: #64748B;
+  --border-color: #E2E8F0;
+  --primary: #4F46E5;
+  --primary-light: #818CF8;
+  --accent: #10B981;
+}
+
+[data-theme="dark"] {
+  --bg-main: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-card: #1E293B;
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --border-color: #334155;
+  --primary: #818CF8;
+  --primary-light: #A5B4FC;
+  --accent: #34D399;
+}
+
+/* Aplicación de Variables CSS */
+.bg-theme-main { background-color: var(--bg-main); }
+.bg-theme-surface { background-color: var(--bg-surface); }
+.text-theme-main { color: var(--text-main); }
+.border-theme-border { border-color: var(--border-color); }
+
+/* Banner Gradiente Figma PointList */
+.bg-gradient-pointlist {
+  background: linear-gradient(135deg, #10B981 0%, #4F46E5 50%, #8B5CF6 100%);
+}
+
+/* Transiciones Suaves */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Botones de Navegación Activos */
+.nav-btn.active {
+  background-color: rgba(79, 70, 229, 0.15);
+  color: #818CF8 !important;
+  border-left: 4px solid #4F46E5;
+  font-weight: 700;
+}
+
+/* Personalización de Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* Efectos de Glassmorphism */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Anima en aparición de páginas */
+.page-content {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
