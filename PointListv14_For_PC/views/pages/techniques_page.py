@@ -582,6 +582,7 @@ class StudyMethodsPage(BasePage):
     def _show_technique_apply(self, tech: dict):
         """Muestra la herramienta interactiva de aplicación práctica (Fase 3 Completa)."""
         colors = self._get_theme_colors()
+        is_dark = self.page and self.page.theme_mode == ft.ThemeMode.DARK
         title = tech.get("titulo", "Técnica")
         info = self._get_technique_info(title)
         key = info["key"]
