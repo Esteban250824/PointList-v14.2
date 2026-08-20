@@ -105,6 +105,7 @@ class PomodoroPage(BasePage):
     def build(self) -> ft.Control:
         colors = self._get_theme_colors()
         from services.navigation_service import NavigationController
+        navbar = self._build_navbar("Pomodoro Pro")
 
         # ─── HEADER BAR WITH VOLVER BUTTON & TITLE ────────────────────────────
         btn_back = ft.OutlinedButton(
