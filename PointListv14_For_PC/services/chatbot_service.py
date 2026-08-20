@@ -23,7 +23,7 @@ else:
 def get_groq_api_key(): return os.getenv("GROQ_API_KEY", "")
 def get_groq_model(): return os.getenv("GROQ_MODEL", "groq/compound")
 def get_gemini_api_key(): return os.getenv("GEMINI_API_KEY", "")
-def get_gemini_model(): return os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+def get_gemini_model(): return os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
@@ -114,7 +114,7 @@ class ChatBotService:
                 f"Instrucción o pregunta del estudiante: '{prompt if prompt else 'Analiza esta imagen minuciosamente.'}'"
             )
 
-            models_to_try = [get_gemini_model(), "gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"]
+            models_to_try = [get_gemini_model(), "gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"]
             for model in models_to_try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
                 payload = {
@@ -150,14 +150,14 @@ class ChatBotService:
             return f"⚠️ Error al procesar la imagen con Gemini: {str(e)}"
 
     def _call_gemini_text(self, messages: list, max_tokens: int = 2000) -> Optional[str]:
-        """Fallback a Google Gemini 2.0 Flash para texto si el modelo de Groq no está disponible."""
+        """Fallback a Google Gemini 3.6 Flash para texto si el modelo de Groq no está disponible."""
         api_key = get_gemini_api_key()
         if not api_key:
             return None
 
         try:
             full_prompt = "\n".join([f"{m['role'].upper()}: {m['content']}" for m in messages])
-            models_to_try = [get_gemini_model(), "gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"]
+            models_to_try = [get_gemini_model(), "gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-latest"]
             for model in models_to_try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
                 payload = {
