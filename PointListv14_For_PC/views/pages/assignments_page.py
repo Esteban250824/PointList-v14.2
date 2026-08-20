@@ -408,9 +408,7 @@ class AssignmentsPage(BasePage):
             ], alignment=ft.MainAxisAlignment.CENTER, spacing=10)
         )
 
-        content = ft.Column([
-            navbar,
-            ft.Container(height=14),
+        body_content = ft.Column([
             header,
             ft.Container(height=16),
             kpi_row,
@@ -422,4 +420,7 @@ class AssignmentsPage(BasePage):
             bottom_banner
         ], scroll=get_scroll_mode("AUTO"), expand=True, spacing=0)
 
-        return ft.Container(padding=24, bgcolor=colors["background"], content=content, expand=True)
+        return ft.Column([
+            navbar,
+            ft.Container(padding=24, bgcolor=colors["background"], content=body_content, expand=True)
+        ], expand=True, spacing=0)

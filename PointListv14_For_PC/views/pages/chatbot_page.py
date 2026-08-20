@@ -11,6 +11,7 @@ import threading
 import os
 from views.pages.base_page import BasePage
 from utils.flet_compat import get_scroll_mode
+from utils.helpers import speak_text
 
 class ChatBotPage(BasePage):
     def __init__(self, page: ft.Page):
@@ -542,7 +543,10 @@ class ChatBotPage(BasePage):
                     ft.TextButton(
                         "🎙️ Escuchar Audio (NotebookLM)",
                         style=ft.ButtonStyle(color="#0284C7"),
-                        on_click=lambda e, t=text: self._show_info("🎙️ Generando resumen en audio NotebookLM para esta respuesta...")
+                        on_click=lambda e, t=text: (
+                            self._show_info("🔊 Reproduciendo resumen de audio NotebookLM..."),
+                            speak_text(t)
+                        )
                     ),
                     ft.Container(expand=True),
                     ft.IconButton(icon=ft.Icons.THUMB_UP_OUTLINE, icon_size=16, icon_color="#64748B"),

@@ -227,20 +227,6 @@ class ChatBotService:
                 return "⚠️ El análisis de imágenes requiere configurar `GEMINI_API_KEY` en el archivo `.env`."
 
         # 3. Si solo hay texto o documentos, procesar con Groq Cloud (Llama 3.3 70B - 128K Context)
-        if not self._groq_available and self._gemini_available:
-            return self._call_gemini_vision(user_message, "", custom_system_prompt)
-
-        if not self._groq_available:
-            return self._demo_response(user_message)
-
-        current_history = []
-        if history:
-            for h in history:
-                current_history.append({"role": "user", "content": h["pregunta"]})
-                current_history.append({"role": "assistant", "content": h["respuesta"]})
-        else:
-            current_history = self._conversation_history
-
     def _call_gemini_text(self, messages: list, max_tokens: int = 2000) -> Optional[str]:
         """Fallback a Google Gemini 2.0 Flash para texto si el modelo de Groq no está disponible."""
         api_key = get_gemini_api_key()
@@ -267,10 +253,29 @@ class ChatBotService:
             print(f"[ChatBot Gemini Text Fallback Error] {ex}")
         return None
 
+    def send_message(
+        self,
+        user_message: str,
+        history: Optional[list] = None,
+        custom_system_prompt: str = SYSTEM_PROMPT,
+        max_tokens: int = 1000,
+    ) -> str:
+        """Envia un mensaje al ChatBot IA con soporte hibrido Groq / Gemini 2.0 Flash / Fallback."""
+        if not user_message:
+            return ""
+
+        current_history = []
+        if history:
+            for h in history:
+                current_history.append({"role": "user", "content": h.get("pregunta", "")})
+                current_history.append({"role": "assistant", "content": h.get("respuesta", "")})
+        else:
+            current_history = self._conversation_history
+
         current_history.append({"role": "user", "content": user_message})
         messages = [{"role": "system", "content": custom_system_prompt}] + current_history[-10:]
 
-        models_to_try = [get_groq_model(), "llama-3.3-70b-specdec", "llama3-70b-8192", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
+        models_to_try = [get_groq_model(), "llama-3.3-70b-versatile", "llama-3.3-70b-specdec", "llama3-70b-8192", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
         assistant_message = None
 
         if self._groq_client:

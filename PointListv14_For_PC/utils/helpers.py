@@ -63,6 +63,26 @@ def send_windows_toast(title: str, message: str):
 
     threading.Thread(target=_toast, daemon=True).start()
 
+def speak_text(text: str):
+    """Sintetiza y reproduce el texto en español utilizando la voz nativa de Windows (System.Speech)."""
+    if not text: return
+    clean_text = text.replace('"', '').replace("'", "").replace("`", "").replace("\n", " ").strip()[:300]
+    if not clean_text: return
+
+    def _speech_bg():
+        try:
+            import subprocess
+            cmd = f"Add-Type -AssemblyName System.Speech; $speech = New-Object System.Speech.Synthesis.SpeechSynthesizer; $speech.Speak('{clean_text}')"
+            creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+            subprocess.Popen(
+                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd],
+                creationflags=creation_flags
+            )
+        except Exception as ex:
+            print(f"[TTS Error] {ex}")
+
+    threading.Thread(target=_speech_bg, daemon=True).start()
+
 # ─────────────────────────────────────────────
 # CONSTANTES GLOBALES DE TEMA / COLORES
 # ─────────────────────────────────────────────

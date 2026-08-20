@@ -65,20 +65,32 @@ class PomodoroPage(BasePage):
                         self._show_info("☕ Descanso finalizado. ¡Listo para otro bloque de enfoque!")
                         self.current_mode = "Enfoque"
                         self.time_left = self.focus_minutes * 60
-                    self._update_timer_ui()
+                    try:
+                        if self.timer_text_ref.current:
+                            self.timer_text_ref.current.value = self._format_time(self.time_left)
+                            self.timer_text_ref.current.update()
+                    except: pass
 
             threading.Thread(target=_timer_thread, daemon=True).start()
-            self._update_timer_ui()
+            try:
+                if self.timer_text_ref.current:
+                    self.timer_text_ref.current.value = self._format_time(self.time_left)
+                    self.timer_text_ref.current.update()
+            except: pass
 
     def _pause_timer(self, e=None):
-        self.is_paused = not self.is_paused
-        self._update_timer_ui()
+        if self.is_running:
+            self.is_paused = not self.is_paused
 
     def _reset_timer(self, e=None):
         self.is_running = False
         self.is_paused = False
         self.time_left = (self.focus_minutes if self.current_mode == "Enfoque" else self.break_minutes) * 60
-        self._update_timer_ui()
+        try:
+            if self.timer_text_ref.current:
+                self.timer_text_ref.current.value = self._format_time(self.time_left)
+                self.timer_text_ref.current.update()
+        except: pass
 
     def _update_timer_ui(self):
         try:
@@ -359,9 +371,7 @@ class PomodoroPage(BasePage):
             ], vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=12)
         )
 
-        content = ft.Column([
-            navbar,
-            ft.Container(height=14),
+        body_content = ft.Column([
             header_row,
             ft.Container(height=20),
             main_grid,
@@ -369,4 +379,7 @@ class PomodoroPage(BasePage):
             bottom_banner
         ], scroll=get_scroll_mode("AUTO"), expand=True, spacing=0)
 
-        return ft.Container(padding=24, bgcolor=colors["background"], content=content, expand=True)
+        return ft.Column([
+            navbar,
+            ft.Container(padding=24, bgcolor=colors["background"], content=body_content, expand=True)
+        ], expand=True, spacing=0)
