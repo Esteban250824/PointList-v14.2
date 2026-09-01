@@ -77,7 +77,8 @@ class HomePage(BasePage):
         num_events = len(events) if events else 4
 
         # ─── Fila de 4 Tarjetas de Estadísticas ─────────────────────────────
-        def build_stat_card(num, title, extra, icon, bg_color_light, bg_color_dark, text_color_light, text_color_dark, icon_bg_light, icon_bg_dark):
+        # ─── Fila de 4 Tarjetas de Estadísticas (Accesos Directos) ─────────────
+        def build_stat_card(num, title, extra, icon, bg_color_light, bg_color_dark, text_color_light, text_color_dark, icon_bg_light, icon_bg_dark, on_click=None):
             bg_col = bg_color_dark if is_dark else bg_color_light
             txt_col = text_color_dark if is_dark else text_color_light
             ic_bg = icon_bg_dark if is_dark else icon_bg_light
@@ -87,6 +88,9 @@ class HomePage(BasePage):
                 padding=16,
                 expand=True,
                 border=ft.border.all(1, colors["border"]),
+                ink=True if on_click else False,
+                on_click=on_click,
+                tooltip=f"Ver {title}",
                 content=ft.Row([
                     ft.Container(
                         content=ft.Icon(icon, color=txt_col, size=24),
@@ -106,10 +110,10 @@ class HomePage(BasePage):
             )
 
         stats_row = ft.Row([
-            build_stat_card(str(num_subjects), self.translate("stat_subjects"), self.translate("stat_subjects_sub"), ft.Icons.BOOK, "#F3E8FF", "#2E1065", "#7C3AED", "#C084FC", "#E9D5FF", "#3B0764"),
-            build_stat_card(f"{avg_grade:.1f}", self.translate("stat_average"), self.translate("stat_average_sub"), ft.Icons.SHOW_CHART, "#DCFCE7", "#064E3B", "#15803D", "#4ADE80", "#BBF7D0", "#022C22"),
-            build_stat_card("85%", self.translate("stat_tasks"), self.translate("stat_tasks_sub"), ft.Icons.CHECKLIST, "#E0F2FE", "#1E3A8A", "#4338CA", "#818CF8", "#E0E7FF", "#172554"),
-            build_stat_card(str(num_events), self.translate("stat_events"), self.translate("stat_events_sub"), ft.Icons.CALENDAR_MONTH, "#FEE2E2", "#7F1D1D", "#B91C1C", "#FCA5A5", "#FECACA", "#450A0A"),
+            build_stat_card(str(num_subjects), self.translate("stat_subjects"), self.translate("stat_subjects_sub"), ft.Icons.BOOK, "#F3E8FF", "#2E1065", "#7C3AED", "#C084FC", "#E9D5FF", "#3B0764", on_click=lambda e: NavigationController.update_view("Notas")),
+            build_stat_card(f"{avg_grade:.1f}", self.translate("stat_average"), self.translate("stat_average_sub"), ft.Icons.SHOW_CHART, "#DCFCE7", "#064E3B", "#15803D", "#4ADE80", "#BBF7D0", "#022C22", on_click=lambda e: NavigationController.update_view("Notas")),
+            build_stat_card("85%", self.translate("stat_tasks"), self.translate("stat_tasks_sub"), ft.Icons.CHECKLIST, "#E0F2FE", "#1E3A8A", "#4338CA", "#818CF8", "#E0E7FF", "#172554", on_click=lambda e: NavigationController.update_view("Asignaciones")),
+            build_stat_card(str(num_events), self.translate("stat_events"), self.translate("stat_events_sub"), ft.Icons.CALENDAR_MONTH, "#FEE2E2", "#7F1D1D", "#B91C1C", "#FCA5A5", "#FECACA", "#450A0A", on_click=lambda e: NavigationController.update_view("Calendario")),
         ], spacing=16)
 
         # ─── Grid de 3 Columnas: Detalles de Dashboard ──────────────────────
@@ -213,7 +217,7 @@ class HomePage(BasePage):
             ], spacing=6)
         )
 
-        # Columna 3: Asignaturas
+        # Columna 3: Asignaturas (Adaptable sin cortes)
         def build_subject_row(name, desc, badge_color):
             return ft.Row([
                 ft.Container(width=10, height=32, border_radius=6, bgcolor=badge_color),
@@ -246,14 +250,14 @@ class HomePage(BasePage):
                 build_subject_row(self.translate("subj_phys"), self.translate("subj_phys_desc"), "#4ADE80"),
                 ft.Divider(color=colors["divider"], height=1, thickness=1),
                 build_subject_row(self.translate("subj_values"), self.translate("subj_values_desc"), "#F59E0B"),
-            ], spacing=4)
+            ], spacing=3)
         )
 
         grid_row = ft.Row([
             tecnicas_box,
             dist_box,
             asignaturas_box
-        ], spacing=16, height=240)
+        ], spacing=16, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
 
         # ─── Sección Inferior: Tareas Próximas ─────────────────────────────
         def build_task_row(title, course, is_green):

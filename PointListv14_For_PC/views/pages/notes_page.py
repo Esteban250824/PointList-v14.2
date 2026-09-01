@@ -127,7 +127,6 @@ class NotesPage(BasePage):
             bgcolor=colors["surface"],
             border_radius=16,
             border=ft.border.all(1, "#E2E8F0"),
-            shadow=ft.BoxShadow(blur_radius=6, color=ft.Colors.BLACK12, offset=ft.Offset(0, 2)),
             expand=True,
             content=ft.Row([
                 ft.Container(
@@ -404,7 +403,6 @@ class NotesPage(BasePage):
             bgcolor=colors["surface"],
             border_radius=14,
             border=ft.border.all(1, "#E2E8F0"),
-            shadow=ft.BoxShadow(blur_radius=4, color=ft.Colors.BLACK12, offset=ft.Offset(0, 1)),
             content=ft.Column([
                 ft.Row([
                     ft.Container(
