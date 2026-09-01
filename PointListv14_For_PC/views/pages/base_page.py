@@ -133,16 +133,15 @@ class BasePage:
                         self._build_popup_menu(),
                         ft.Container(width=5 if is_mobile else 10),
                         # Logo y nombre (Acceso directo a Inicio)
-                        ft.GestureDetector(
-                            on_tap=lambda _: NavigationController.update_view("Inicio"),
-                            content=ft.MouseRegion(
-                                cursor=ft.MouseCursor.CLICK,
-                                content=ft.Row([
-                                    logo_ctrl,
-                                    ft.Text("PointList", size=20 if is_mobile else 22, weight=ft.FontWeight.BOLD, 
-                                        color=colors["text"], font_family="Poppins", visible=self.page.width > 450)
-                                ], spacing=8)
-                            )
+                        ft.Container(
+                            ink=True,
+                            on_click=lambda _: NavigationController.update_view("Inicio"),
+                            tooltip="Ir a Inicio",
+                            content=ft.Row([
+                                logo_ctrl,
+                                ft.Text("PointList", size=20 if is_mobile else 22, weight=ft.FontWeight.BOLD, 
+                                    color=colors["text"], font_family="Poppins", visible=self.page.width > 450)
+                            ], spacing=8)
                         ),
                     ]),
                     ft.Row(right_controls, spacing=0),
