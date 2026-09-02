@@ -6,6 +6,7 @@ soporte para modo oscuro dinámico y multi-idioma (i18n).
 """
 
 import flet as ft
+import copy
 from datetime import datetime
 from views.pages.base_page import BasePage
 from utils.flet_compat import get_scroll_mode
@@ -40,29 +41,25 @@ class HomePage(BasePage):
         # ─── Cabecera Superior (Navbar) ──────────────────────────────────────
         navbar = self._build_navbar(self.translate("nav_home"))
 
-        notes = NavigationController.cache.get("notes", None)
-        if notes is None and self._user and self._user.get("id"):
+        notes = None
+        if self._user and self._user.get("id"):
             try:
-                notes = self._db.obtener_notas(self._user.get("id")) or []
-            except:
-                notes = []
-        if notes is None:
-            notes = [] if (self._user and self._user.get("id")) else [
-                {"asignatura": "Biología", "calificacion": 4.5},
-                {"asignatura": "Arte", "calificacion": 1.0},
-                {"asignatura": "Química", "calificacion": 4.7},
-                {"asignatura": "Valores", "calificacion": 3.8},
-                {"asignatura": "Biología", "calificacion": 4.9},
-                {"asignatura": "Informática", "calificacion": 5.0},
-                {"asignatura": "Física", "calificacion": 4.5},
-                {"asignatura": "Matemáticas", "calificacion": 3.0},
-            ]
+                notes = self._db.obtener_notas(self._user.get("id"))
+                if notes:
+                    NavigationController.cache["notes"] = copy.deepcopy(notes)
+            except Exception as e:
+                print(f"[HomePage] Error leyendo notas de PostgreSQL: {e}")
 
-        events = NavigationController.cache.get("calendar_events", [])
-        if not events and self._user and self._user.get("id"):
+        if not notes:
+            notes = NavigationController.cache.get("notes", [])
+
+        events = None
+        if self._user and self._user.get("id"):
             try:
-                events = self._db.obtener_eventos_calendario(self._user.get("id")) or []
+                events = self._db.obtener_eventos(self._user.get("id"))
             except: pass
+        if not events:
+            events = NavigationController.cache.get("calendar_events", [])
 
         grades = [float(n.get("calificacion", 0)) for n in notes]
         avg_grade = (sum(grades) / len(grades)) if grades else 0.0

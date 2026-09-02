@@ -366,30 +366,58 @@ class DatabaseService:
                 return True
         except: return False
 
-    def agregar_nota(self, uid, asignatura, calificacion, fecha, comentarios="", profesor_id=None):
-        """Agrega una nueva nota. Si profesor_id está presente, es una nota asignada por un profesor."""
+    def agregar_nota(self, uid, asignatura, calificacion, fecha=None, comentarios="", profesor_id=None):
+        """Agrega una nueva nota en la base de datos."""
+        from datetime import date
+        if not fecha:
+            fecha = date.today().isoformat()
         try:
             with self._get_cursor() as cursor:
+                clean_pid = profesor_id if (profesor_id and str(profesor_id).isdigit()) else None
                 cursor.execute(
                     "INSERT INTO notas (usuario_id, profesor_id, asignatura, calificacion, fecha, comentarios, timestamp) VALUES (%s, %s, %s, %s, %s, %s, EXTRACT(EPOCH FROM NOW())) RETURNING id",
-                    (uid, profesor_id, asignatura, float(calificacion), fecha, comentarios)
+                    (uid, clean_pid, asignatura, float(calificacion), fecha, comentarios)
                 )
                 nid = cursor.fetchone()[0]
+                print(f"[DB] Nota creada en PostgreSQL -> ID: {nid}, Usuario: {uid}, Asignatura: {asignatura}, Nota: {calificacion}")
                 return {"ok": True, "id": nid}
         except Exception as e:
+            print(f"[DB ERROR agregar_nota]: {e}")
             return {"ok": False, "error": str(e)}
 
-    def guardar_nota(self, uid, profesor_id, asignatura, calificacion, fecha, comentarios=""):
-        """Alias compatible con el flujo anterior del frontend."""
-        return self.agregar_nota(uid, asignatura, calificacion, fecha, comentarios, profesor_id=profesor_id)
+    def guardar_nota(self, uid=None, asignatura_or_prof=None, calificacion_or_asig=None, fecha_or_calif=None, comentarios_or_fecha="", extra_comentarios="", profesor_id=None, **kwargs):
+        """Metodo flexible para guardar notas compatibles con cualquier formato del frontend."""
+        from datetime import date
+        real_uid = uid or kwargs.get("uid") or kwargs.get("usuario_id")
+        if isinstance(asignatura_or_prof, int) or (isinstance(asignatura_or_prof, str) and asignatura_or_prof.isdigit()):
+            p_id = asignatura_or_prof
+            asig = str(calificacion_or_asig or kwargs.get("asignatura", ""))
+            try: calif = float(fecha_or_calif if fecha_or_calif is not None else kwargs.get("calificacion", 0))
+            except: calif = 0.0
+            fch = comentarios_or_fecha if isinstance(comentarios_or_fecha, str) and len(comentarios_or_fecha) == 10 else date.today().isoformat()
+            comms = extra_comentarios or kwargs.get("comentarios", "")
+        else:
+            p_id = profesor_id or kwargs.get("profesor_id")
+            asig = str(asignatura_or_prof or kwargs.get("asignatura", ""))
+            try: calif = float(calificacion_or_asig if calificacion_or_asig is not None else kwargs.get("calificacion", 0))
+            except: calif = 0.0
+            fch = fecha_or_calif if (isinstance(fecha_or_calif, str) and len(fecha_or_calif) == 10) else kwargs.get("fecha", date.today().isoformat())
+            comms = comentarios_or_fecha if isinstance(comentarios_or_fecha, str) else kwargs.get("comentarios", "")
 
-    def eliminar_nota(self, nid, uid):
-        """Elimina una nota. Solo si el usuario es el dueño o el profesor que la puso."""
+        return self.agregar_nota(uid=real_uid, asignatura=asig, calificacion=calif, fecha=fch, comentarios=comms, profesor_id=p_id)
+
+    def eliminar_nota(self, nid, uid=None):
+        """Elimina una nota de la base de datos de PostgreSQL."""
         try:
             with self._get_cursor() as cursor:
-                cursor.execute("DELETE FROM notas WHERE id = %s AND (usuario_id = %s OR profesor_id = %s)", (nid, uid, uid))
+                if uid:
+                    cursor.execute("DELETE FROM notas WHERE id = %s AND (usuario_id = %s OR profesor_id = %s)", (nid, uid, uid))
+                else:
+                    cursor.execute("DELETE FROM notas WHERE id = %s", (nid,))
+                print(f"[DB] Nota ID {nid} eliminada de PostgreSQL.")
                 return {"ok": True}
         except Exception as e:
+            print(f"[DB ERROR eliminar_nota]: {e}")
             return {"ok": False, "error": str(e)}
 
     def guardar_evento(self, uid, titulo, descripcion, tipo_evento, fecha_inicio, fecha_fin):

@@ -79,21 +79,22 @@ class NotesPage(BasePage):
         self._stop_sync = False
 
     def _load_notas(self):
-        """Carga notas desde BD o caché. Si el usuario está registrado y no tiene notas, la lista permanece vacía (0 notas)."""
+        """Carga notas directamente desde PostgreSQL. Si no hay conexión o no hay usuario, usa la caché."""
         from services.navigation_service import NavigationController
-        cached_notes = NavigationController.cache.get("notes", None)
-        if cached_notes is not None:
-            self._notas = copy.deepcopy(cached_notes)
+        if self._uid:
+            try:
+                db_notes = self._db.obtener_notas(self._uid)
+                if db_notes:
+                    self._notas = copy.deepcopy(db_notes)
+                else:
+                    self._notas = copy.deepcopy(NavigationController.cache.get("notes", []))
+            except Exception as e:
+                print(f"[NotesPage] Error al cargar notas de PostgreSQL: {e}")
+                self._notas = copy.deepcopy(NavigationController.cache.get("notes", []))
         else:
-            if self._uid:
-                try:
-                    db_notes = self._db.obtener_notas(self._uid)
-                    self._notas = copy.deepcopy(db_notes) if db_notes is not None else []
-                except:
-                    self._notas = []
-            else:
-                self._notas = copy.deepcopy(self.DEFAULT_NOTES)
-            NavigationController.cache["notes"] = copy.deepcopy(self._notas)
+            self._notas = copy.deepcopy(NavigationController.cache.get("notes", self.DEFAULT_NOTES))
+
+        NavigationController.cache["notes"] = copy.deepcopy(self._notas)
 
     def _sync_notes_background(self):
         """Sincroniza notas en background."""
@@ -563,8 +564,18 @@ class NotesPage(BasePage):
             def _save_bg():
                 try:
                     if hasattr(self._db, "guardar_nota"):
-                        self._db.guardar_nota(sel_id, new_note["asignatura"], new_note["calificacion"], new_note["comentarios"])
-                except: pass
+                        prof_id = self._uid if "profesor" in str(self._rol).lower() else None
+                        res = self._db.guardar_nota(
+                            uid=sel_id,
+                            asignatura=new_note["asignatura"],
+                            calificacion=new_note["calificacion"],
+                            fecha=new_note["fecha"],
+                            comentarios=new_note["comentarios"],
+                            profesor_id=prof_id
+                        )
+                        print(f"[NotesPage] Guardar nota resultado: {res}")
+                except Exception as ex:
+                    print(f"[NotesPage] Error guardando nota en background: {ex}")
             threading.Thread(target=_save_bg, daemon=True).start()
 
             self.page.close(dlg)
