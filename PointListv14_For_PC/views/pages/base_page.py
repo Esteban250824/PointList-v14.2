@@ -193,6 +193,11 @@ class BasePage:
                             on_click=lambda _: _nav("Notas"),
                         ),
                         ft.ListTile(
+                            leading=ft.Icon(ft.Icons.BOOKMARK_BORDER, color=self.primary_color),
+                            title=ft.Text("Mis materias", weight="bold", color=colors["text"]),
+                            on_click=lambda _: _nav("Materias"),
+                        ),
+                        ft.ListTile(
                             leading=ft.Icon(ft.Icons.ASSIGNMENT_OUTLINED, color=self.primary_color),
                             title=ft.Text("Asignaciones", weight="bold", color=colors["text"]),
                             on_click=lambda _: _nav("Asignaciones"),

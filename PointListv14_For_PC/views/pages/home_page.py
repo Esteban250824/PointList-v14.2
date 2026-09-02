@@ -107,7 +107,7 @@ class HomePage(BasePage):
             )
 
         stats_row = ft.Row([
-            build_stat_card(str(num_subjects), self.translate("stat_subjects"), self.translate("stat_subjects_sub"), ft.Icons.BOOK, "#F3E8FF", "#2E1065", "#7C3AED", "#C084FC", "#E9D5FF", "#3B0764", on_click=lambda e: NavigationController.update_view("Notas")),
+            build_stat_card(str(num_subjects), self.translate("stat_subjects"), self.translate("stat_subjects_sub"), ft.Icons.BOOK, "#F3E8FF", "#2E1065", "#7C3AED", "#C084FC", "#E9D5FF", "#3B0764", on_click=lambda e: NavigationController.update_view("Materias")),
             build_stat_card(f"{avg_grade:.1f}", self.translate("stat_average"), self.translate("stat_average_sub"), ft.Icons.SHOW_CHART, "#DCFCE7", "#064E3B", "#15803D", "#4ADE80", "#BBF7D0", "#022C22", on_click=lambda e: NavigationController.update_view("Notas")),
             build_stat_card("85%", self.translate("stat_tasks"), self.translate("stat_tasks_sub"), ft.Icons.CHECKLIST, "#E0F2FE", "#1E3A8A", "#4338CA", "#818CF8", "#E0E7FF", "#172554", on_click=lambda e: NavigationController.update_view("Asignaciones")),
             build_stat_card(str(num_events), self.translate("stat_events"), self.translate("stat_events_sub"), ft.Icons.CALENDAR_MONTH, "#FEE2E2", "#7F1D1D", "#B91C1C", "#FCA5A5", "#FECACA", "#450A0A", on_click=lambda e: NavigationController.update_view("Calendario")),
@@ -235,7 +235,7 @@ class HomePage(BasePage):
                 ft.Row([
                     ft.Text(self.translate("sidebar_asignaturas"), size=14, weight=ft.FontWeight.BOLD, color=colors["text"]),
                     ft.Container(expand=True),
-                    ft.TextButton(self.translate("tech_view_all"), style=ft.ButtonStyle(padding=0), on_click=lambda e: NavigationController.update_view("Notas"))
+                    ft.TextButton(self.translate("tech_view_all"), style=ft.ButtonStyle(padding=0), on_click=lambda e: NavigationController.update_view("Materias"))
                 ]),
                 ft.Container(height=4),
                 build_subject_row(self.translate("subj_math"), self.translate("subj_math_desc"), "#F472B6"),
@@ -285,7 +285,7 @@ class HomePage(BasePage):
                 ft.Row([
                     ft.Text(self.translate("tasks_upcoming"), size=14, weight=ft.FontWeight.BOLD, color=colors["text"]),
                     ft.Container(expand=True),
-                    ft.TextButton(self.translate("tech_view_all"), style=ft.ButtonStyle(padding=0), on_click=lambda e: NavigationController.update_view("Notas"))
+                    ft.TextButton(self.translate("tech_view_all"), style=ft.ButtonStyle(padding=0), on_click=lambda e: NavigationController.update_view("Asignaciones"))
                 ]),
                 ft.Container(height=4),
                 build_task_row(self.translate("task_report"), self.translate("subj_cs"), True),

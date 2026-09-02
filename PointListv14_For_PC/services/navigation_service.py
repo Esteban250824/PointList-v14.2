@@ -71,6 +71,7 @@ class NavigationController:
 
                 from views.pages.flashcards_page import FlashcardsPage
                 from views.pages.pomodoro_page import PomodoroPage
+                from views.pages.subjects_page import SubjectsPage
 
                 pages = {
                     "Login": LoginPage,
@@ -78,6 +79,7 @@ class NavigationController:
                     "Recuperar": RecuperarContrasenaPage,
                     "Inicio": HomePage,
                     "Notas": NotesPage,
+                    "Materias": SubjectsPage,
                     "Asignaciones": AssignmentsPage,
                     "Calendario": CalendarPage,
                     "Tecnicas": StudyMethodsPage,
