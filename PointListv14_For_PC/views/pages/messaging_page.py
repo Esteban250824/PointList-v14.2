@@ -176,6 +176,78 @@ class MessagingPage(BasePage):
                 self._input_ref.current.value = f"[Archivo: {file_name}]"
                 self._send_message()
 
+    def _open_new_contact_dialog(self):
+        """Abre un diálogo para buscar usuario e iniciar una conversación."""
+        all_users = self._db.obtener_todos_los_usuarios() or []
+        options = []
+        for u in all_users:
+            if self._uid and u.get("id") == self._uid:
+                continue
+            name = u.get("name") or u.get("nombre_usuario") or u.get("nombre") or u.get("email") or "Usuario"
+            options.append(ft.dropdown.Option(key=str(u["id"]), text=f"👤 {name} ({u.get('email','')})"))
+
+        if not options:
+            self._show_info("No hay otros usuarios registrados en la plataforma.")
+            return
+
+        user_dropdown = ft.Dropdown(label="Selecciona un usuario", options=options, border_radius=10, expand=True)
+
+        def _start_chat(e):
+            sel_id = user_dropdown.value
+            if not sel_id:
+                return
+            sel_u = next((u for u in all_users if str(u["id"]) == str(sel_id)), None)
+            if sel_u:
+                sel_u.setdefault("last_msg", "")
+                sel_u.setdefault("time", "")
+                if sel_u not in self._contacts:
+                    self._contacts.append(sel_u)
+                self._filtered_contacts = list(NavigationController.cache.get("group_chats", [])) + list(self._contacts)
+                self.page.close(dlg)
+                self._select_contact(sel_u)
+
+        from services.navigation_service import NavigationController
+        dlg = ft.AlertDialog(
+            modal=False,
+            title=ft.Row([ft.Icon(ft.Icons.CHAT_BUBBLE_OUTLINE, color="#7C3AED"), ft.Text("Nuevo Chat", size=16, weight="bold")]),
+            content=ft.Container(width=380, height=100, content=ft.Column([user_dropdown], spacing=8)),
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg)),
+                ft.ElevatedButton("Iniciar Chat", bgcolor="#7C3AED", color="white", on_click=_start_chat),
+            ]
+        )
+        self.page.open(dlg)
+
+    def _open_settings_dialog(self):
+        """Abre un pequeño menú de configuración de la mensajería."""
+        from services.navigation_service import NavigationController
+        dlg = ft.AlertDialog(
+            modal=False,
+            title=ft.Row([ft.Icon(ft.Icons.SETTINGS_OUTLINED, color="#7C3AED"), ft.Text("Configuración", size=16, weight="bold")]),
+            content=ft.Container(
+                width=340, height=160,
+                content=ft.Column([
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.PERSON_OUTLINED, color="#7C3AED"),
+                        title=ft.Text("Ver perfil"),
+                        on_click=lambda e: [self.page.close(dlg), NavigationController.update_view("Perfil")]
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.NOTIFICATIONS_OUTLINED, color="#7C3AED"),
+                        title=ft.Text("Notificaciones"),
+                        subtitle=ft.Text("Activadas", size=11, color="#64748B"),
+                    ),
+                    ft.ListTile(
+                        leading=ft.Icon(ft.Icons.LOGOUT, color="#EF4444"),
+                        title=ft.Text("Cerrar sesión", color="#EF4444"),
+                        on_click=lambda e: [self.page.close(dlg), NavigationController.update_view("Login")]
+                    ),
+                ], spacing=0)
+            ),
+            actions=[ft.TextButton("Cerrar", on_click=lambda e: self.page.close(dlg))]
+        )
+        self.page.open(dlg)
+
     def _build_left_icon_sidebar(self) -> ft.Control:
         """Columna 1: Barra lateral de iconos rápida (Figma Imagen 4)."""
         colors = self._get_theme_colors()
@@ -185,6 +257,20 @@ class MessagingPage(BasePage):
             self.page.theme_mode = ft.ThemeMode.LIGHT if is_dark else ft.ThemeMode.DARK
             self.page.update()
 
+        def _filter_groups(e):
+            """Filtra la lista para mostrar solo grupos."""
+            self._active_filter = "Grupos"
+            from services.navigation_service import NavigationController
+            groups = NavigationController.cache.get("group_chats", [])
+            self._filtered_contacts = list(groups)
+            self._refresh_contacts_list()
+
+        def _open_new_chat(e):
+            """Abre diálogo para iniciar chat con un nuevo usuario."""
+            self._open_new_contact_dialog()
+
+        active_icon_bg = colors["primary"] if hasattr(colors, "primary") else "#0F172A"
+
         return ft.Container(
             width=68,
             bgcolor=colors["card_bg"],
@@ -192,24 +278,43 @@ class MessagingPage(BasePage):
             border_radius=20,
             padding=ft.padding.symmetric(vertical=20, horizontal=10),
             content=ft.Column([
-                # Icono Chat Seleccionado (Fondo negro u oscuro)
+                # Icono Chat Activo
                 ft.Container(
                     width=44, height=44, border_radius=14,
-                    bgcolor="#0F172A" if not is_dark else "#1E293B",
+                    bgcolor="#1E293B" if is_dark else "#0F172A",
                     alignment=ft.alignment.center,
+                    tooltip="Mensajes",
                     content=ft.Icon(ft.Icons.CHAT_BUBBLE_ROUNDED, color="white", size=20)
                 ),
                 ft.Container(height=16),
-                ft.IconButton(ft.Icons.GROUPS_OUTLINED, icon_color="#64748B", icon_size=22, tooltip="Grupos"),
-                ft.IconButton(ft.Icons.PERSON_ADD_OUTLINED, icon_color="#64748B", icon_size=22, tooltip="Agregar contacto"),
-                ft.IconButton(ft.Icons.SETTINGS_OUTLINED, icon_color="#64748B", icon_size=22, tooltip="Configuración"),
+                ft.IconButton(
+                    ft.Icons.GROUPS_OUTLINED,
+                    icon_color="#64748B",
+                    icon_size=22,
+                    tooltip="Ver Grupos",
+                    on_click=_filter_groups
+                ),
+                ft.IconButton(
+                    ft.Icons.PERSON_ADD_OUTLINED,
+                    icon_color="#64748B",
+                    icon_size=22,
+                    tooltip="Nuevo chat / Agregar contacto",
+                    on_click=_open_new_chat
+                ),
+                ft.IconButton(
+                    ft.Icons.SETTINGS_OUTLINED,
+                    icon_color="#64748B",
+                    icon_size=22,
+                    tooltip="Configuración de cuenta",
+                    on_click=lambda e: self._open_settings_dialog()
+                ),
                 ft.Container(expand=True),
                 # Botón Modo Oscuro al final
                 ft.IconButton(
                     ft.Icons.NIGHTLIGHT_OUTLINED if not is_dark else ft.Icons.WB_SUNNY_OUTLINED,
-                    icon_color="#0F172A" if not is_dark else "#F59E0B",
+                    icon_color="#F59E0B" if is_dark else "#334155",
                     icon_size=22,
-                    tooltip="Cambiar tema",
+                    tooltip="Cambiar a modo oscuro" if not is_dark else "Cambiar a modo claro",
                     on_click=_toggle_theme
                 ),
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
@@ -463,12 +568,14 @@ class MessagingPage(BasePage):
     def _build_right_panel_content(self) -> ft.Control:
         """Columna 3: Ventana de conversación activa (Figma Imagen 4)."""
         colors = self._get_theme_colors()
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
 
         if not self._selected_contact:
             return ft.Container(
                 expand=True,
-                bgcolor="#F8FAFC",
+                bgcolor=colors["card_bg"],
                 border_radius=20,
+                border=ft.border.all(1, colors["border"]),
                 alignment=ft.alignment.center,
                 content=ft.Text("Selecciona una conversación para comenzar a chatear", color="#94A3B8")
             )
@@ -476,38 +583,44 @@ class MessagingPage(BasePage):
         contact_name = self._contact_display_name(self._selected_contact)
         is_group = self._selected_contact.get("is_group", False)
 
+        group_avatar_bg = "#3B4B6B" if is_dark else "#334155"
+
         header = ft.Container(
             padding=ft.padding.symmetric(horizontal=20, vertical=12),
             bgcolor=colors["surface"],
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             border_radius=ft.border_radius.only(top_left=20, top_right=20),
             content=ft.Row([
                 ft.CircleAvatar(
                     radius=18,
-                    bgcolor="#0F172A" if is_group else self._get_avatar_color(contact_name),
+                    bgcolor=group_avatar_bg if is_group else self._get_avatar_color(contact_name),
                     content=ft.Icon(ft.Icons.GROUPS, color="white", size=18) if is_group else ft.Text(contact_name[:2].upper(), color="white", size=11, weight="bold")
                 ),
                 ft.Container(width=10),
                 ft.Column([
                     ft.Text(contact_name, size=15, weight=ft.FontWeight.BOLD, color=colors["text"]),
-                    ft.Text("11 miembros" if is_group else "En línea", size=10.5, color="#64748B"),
+                    ft.Text("11 miembros" if is_group else "En línea", size=10.5, color=colors["text_muted"]),
                 ], spacing=0, expand=True),
-                ft.IconButton(ft.Icons.SEARCH, icon_color="#64748B", icon_size=20),
-                ft.IconButton(ft.Icons.PERSON_ADD_OUTLINED, icon_color="#64748B", icon_size=20),
-                ft.IconButton(ft.Icons.MORE_VERT, icon_color="#64748B", icon_size=20),
+                ft.IconButton(ft.Icons.SEARCH, icon_color=colors["text_muted"], icon_size=20),
+                ft.IconButton(ft.Icons.PERSON_ADD_OUTLINED, icon_color=colors["text_muted"], icon_size=20),
+                ft.IconButton(ft.Icons.MORE_VERT, icon_color=colors["text_muted"], icon_size=20),
             ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
         )
 
         self._messages_ref.current = ft.Column(spacing=12, scroll=get_scroll_mode(self.page))
 
+        input_field_bg = "#F1F5F9" if not is_dark else "#1E293B"
+        input_border = "#E2E8F0" if not is_dark else "#334155"
+
         input_bar = ft.Container(
             padding=ft.padding.all(14),
             bgcolor=colors["surface"],
+            border=ft.border.all(1, colors["border"]),
             border_radius=ft.border_radius.only(bottom_left=20, bottom_right=20),
             content=ft.Row([
                 ft.IconButton(
                     ft.Icons.ATTACH_FILE,
-                    icon_color="#64748B",
+                    icon_color=colors["text_muted"],
                     icon_size=22,
                     on_click=lambda e: self._file_picker.pick_files()
                 ),
@@ -515,13 +628,13 @@ class MessagingPage(BasePage):
                     ref=self._input_ref,
                     hint_text="Escribe un mensaje....",
                     border_radius=24,
-                    bgcolor="#F8FAFC",
-                    border_color="#E2E8F0",
+                    bgcolor=input_field_bg,
+                    border_color=input_border,
                     content_padding=ft.padding.symmetric(horizontal=16, vertical=10),
                     expand=True,
                     on_submit=self._send_message,
                 ),
-                ft.IconButton(ft.Icons.INSERT_EMOTICON, icon_color="#64748B", icon_size=22),
+                ft.IconButton(ft.Icons.INSERT_EMOTICON, icon_color=colors["text_muted"], icon_size=22),
                 ft.Container(
                     width=40, height=40, border_radius=20,
                     bgcolor="#22C55E",
@@ -535,7 +648,7 @@ class MessagingPage(BasePage):
 
         return ft.Container(
             expand=True,
-            bgcolor="#F8FAFC",
+            bgcolor=colors["background"],
             border=ft.border.all(1, colors["border"]),
             border_radius=20,
             content=ft.Column([
