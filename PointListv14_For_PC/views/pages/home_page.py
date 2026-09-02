@@ -138,6 +138,8 @@ class HomePage(BasePage):
             border=ft.border.all(1, colors["border"]),
             border_radius=16,
             padding=16,
+            width=None,
+            height=240,
             expand=True,
             content=ft.Column([
                 ft.Row([
@@ -194,6 +196,7 @@ class HomePage(BasePage):
             border=ft.border.all(1, colors["border"]),
             border_radius=16,
             padding=16,
+            height=240,
             expand=True,
             content=ft.Column([
                 ft.Row([
@@ -214,7 +217,7 @@ class HomePage(BasePage):
             ], spacing=6)
         )
 
-        # Columna 3: Asignaturas (Adaptable sin cortes)
+        # Columna 3: Asignaturas
         def build_subject_row(name, desc, badge_color):
             return ft.Row([
                 ft.Container(width=10, height=32, border_radius=6, bgcolor=badge_color),
@@ -230,6 +233,7 @@ class HomePage(BasePage):
             border=ft.border.all(1, colors["border"]),
             border_radius=16,
             padding=16,
+            height=240,
             expand=True,
             content=ft.Column([
                 ft.Row([
@@ -247,14 +251,14 @@ class HomePage(BasePage):
                 build_subject_row(self.translate("subj_phys"), self.translate("subj_phys_desc"), "#4ADE80"),
                 ft.Divider(color=colors["divider"], height=1, thickness=1),
                 build_subject_row(self.translate("subj_values"), self.translate("subj_values_desc"), "#F59E0B"),
-            ], spacing=3)
+            ], spacing=3, scroll=ft.ScrollMode.HIDDEN)
         )
 
         grid_row = ft.Row([
             tecnicas_box,
             dist_box,
             asignaturas_box
-        ], spacing=16, vertical_alignment=ft.CrossAxisAlignment.STRETCH)
+        ], spacing=16)
 
         # ─── Sección Inferior: Tareas Próximas ─────────────────────────────
         def build_task_row(title, course, is_green):
