@@ -521,7 +521,7 @@ class MessagingPage(BasePage):
                     expand=True,
                     on_submit=self._send_message,
                 ),
-                ft.IconButton(ft.Icons.EMOJI_EMOTICONS_OUTLINED, icon_color="#64748B", icon_size=22),
+                ft.IconButton(ft.Icons.INSERT_EMOTICON, icon_color="#64748B", icon_size=22),
                 ft.Container(
                     width=40, height=40, border_radius=20,
                     bgcolor="#22C55E",
