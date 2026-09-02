@@ -460,7 +460,7 @@ class MessagingPage(BasePage):
             NavigationController.cache["messages"] = {}
         return NavigationController.cache["messages"].get(contact_id, [])
 
-    def _build_right_panel_content() -> ft.Control:
+    def _build_right_panel_content(self) -> ft.Control:
         """Columna 3: Ventana de conversación activa (Figma Imagen 4)."""
         colors = self._get_theme_colors()
 

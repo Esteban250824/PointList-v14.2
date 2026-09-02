@@ -279,15 +279,143 @@ class AssignmentsPage(BasePage):
         )
         self.page.open(dlg)
 
+    def _open_add_assignment_dialog(self, e=None):
+        """Abre un modal interactivo para crear y asignar una nueva tarea a estudiantes o a la comunidad."""
+        all_users = self._db.obtener_todos_los_usuarios() or []
+        students = [u for u in all_users if "profesor" not in str(u.get("rol", "")).lower() and u.get("id") != self._uid]
+        
+        student_options = [ft.dropdown.Option("todos", text="👥 Todos los estudiantes")]
+        for s in students:
+            student_options.append(
+                ft.dropdown.Option(
+                    key=str(s["id"]),
+                    text=f"👤 {s.get('name') or s.get('nombre') or s.get('email')} ({s.get('email', '')})"
+                )
+            )
+
+        student_dropdown = ft.Dropdown(
+            label="Asignar a Estudiante",
+            options=student_options,
+            value="todos",
+            border_radius=10,
+            expand=True,
+        )
+
+        subject_dropdown = ft.Dropdown(
+            label="Asignatura",
+            options=[ft.dropdown.Option(s) for s in self.SUBJECTS],
+            value=self.SUBJECTS[0],
+            border_radius=10,
+            expand=True,
+        )
+        
+        title_input = ft.TextField(
+            label="Título de la Asignación",
+            hint_text="Ej: Taller #3: Ecuaciones y Ejercicios",
+            border_radius=10,
+            autofocus=True,
+        )
+
+        date_input = ft.TextField(
+            label="Fecha de Entrega (AAAA-MM-DD)",
+            hint_text="Ej: 2026-09-15",
+            value="2026-09-15",
+            border_radius=10,
+        )
+
+        instructions_input = ft.TextField(
+            label="Instrucciones o Descripción de la Tarea",
+            hint_text="Ej: Resolver los ejercicios de la página 45 a la 50 y adjuntar procedimiento.",
+            border_radius=10,
+            multiline=True,
+            min_lines=2,
+            max_lines=3,
+        )
+
+        def _save_assignment(e):
+            t_val = title_input.value.strip()
+            if not t_val:
+                self._show_info("Por favor ingresa un título para la asignación.")
+                return
+
+            sel_id = student_dropdown.value
+            st_name = "Todos los estudiantes"
+            if sel_id != "todos":
+                sel_st = next((s for s in students if str(s["id"]) == str(sel_id)), None)
+                if sel_st:
+                    st_name = sel_st.get("name") or sel_st.get("nombre") or sel_st.get("email") or "Estudiante"
+
+            import time
+            new_assig = {
+                "id": f"asig_{int(time.time())}",
+                "titulo": t_val,
+                "asignatura": subject_dropdown.value,
+                "profesor": (self._user.get("name") or self._user.get("nombre_usuario") or "Profesor") if self._user else "Profesor",
+                "estudiante_id": sel_id,
+                "estudiante_nombre": st_name,
+                "fecha_entrega": date_input.value.strip() or "2026-09-15",
+                "hora_entrega": "23:59",
+                "instrucciones": instructions_input.value.strip() or "Resolver los ejercicios de forma completa.",
+                "puntuacion_maxima": 5.0,
+                "estado": "Pendiente",
+                "entrega_texto": "",
+                "archivo_adjunto": "",
+                "calificacion": None,
+                "retroalimentacion": "",
+            }
+
+            self._assignments.insert(0, new_assig)
+            from services.navigation_service import NavigationController
+            NavigationController.cache["assignments"] = copy.deepcopy(self._assignments)
+
+            self.page.close(dlg)
+            self._update_cards_list()
+            self._show_info(f"Asignación '{t_val}' creada y publicada exitosamente para {st_name}.")
+
+        dlg = ft.AlertDialog(
+            modal=False,
+            title=ft.Row([
+                ft.Icon(ft.Icons.ASSIGNMENT_ADD, color="#7C3AED", size=24),
+                ft.Text("Crear y Asignar Tarea", size=18, weight="bold")
+            ]),
+            content=ft.Container(
+                width=460, height=420,
+                content=ft.Column([
+                    ft.Text("Completa la información para asignar una nueva tarea:", size=12, color="#64748B"),
+                    ft.Container(height=8),
+                    title_input,
+                    ft.Container(height=8),
+                    ft.Row([subject_dropdown, student_dropdown], spacing=8),
+                    ft.Container(height=8),
+                    date_input,
+                    ft.Container(height=8),
+                    instructions_input,
+                ], spacing=0, expand=True)
+            ),
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda e: self.page.close(dlg)),
+                ft.ElevatedButton("Publicar Asignación", bgcolor="#7C3AED", color="white", on_click=_save_assignment),
+            ]
+        )
+        self.page.open(dlg)
+
     def build(self) -> ft.Control:
         colors = self._get_theme_colors()
         navbar = self._build_navbar("Mis Tareas")
 
         # ─── HEADER ──────────────────────────────────────────────────────────
-        header = ft.Column([
-            ft.Text("Mis Tareas", size=28, weight="bold", color=colors["text"]),
-            ft.Text("Consulta y entrega las tareas asignadas por tu profesores.", size=13, color=colors["text_secondary"]),
-        ], spacing=2)
+        header = ft.Row([
+            ft.Column([
+                ft.Text("Mis Tareas", size=28, weight="bold", color=colors["text"]),
+                ft.Text("Consulta, crea y entrega las tareas asignadas en la plataforma.", size=13, color=colors["text_secondary"]),
+            ], spacing=2, expand=True),
+            ft.ElevatedButton(
+                "➕ Asignar Tarea",
+                bgcolor="#7C3AED",
+                color="white",
+                on_click=self._open_add_assignment_dialog
+            )
+        ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
         # ─── KPI CARDS ───────────────────────────────────────────────────────
         total_count = len(self._assignments)
