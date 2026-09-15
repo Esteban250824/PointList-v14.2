@@ -50,14 +50,16 @@ class MessagingPage(BasePage):
         def _poll_loop():
             import copy
             while True:
-                time.sleep(0.5)
+                time.sleep(3.0)
                 try:
+                    from services.navigation_service import NavigationController
+                    if NavigationController.current_view_name != "Mensajeria":
+                        continue
                     if not self.page or not self._uid: continue
                     if self._selected_contact:
                         cid = self._selected_contact.get("id")
                         if cid and (str(cid).isdigit() or isinstance(cid, int)):
                             db_msgs = self._db.obtener_mensajes(self._uid, cid) or []
-                            from services.navigation_service import NavigationController
                             if "messages" not in NavigationController.cache:
                                 NavigationController.cache["messages"] = {}
                             old_msgs = NavigationController.cache["messages"].get(cid, [])
@@ -482,6 +484,7 @@ class MessagingPage(BasePage):
             sender_name = m.get("sender_name") or m.get("emisor") or "Usuario"
             content = m.get("contenido") or m.get("content") or ""
             time_str = m.get("timestamp") or m.get("time") or "Ahora"
+            bubble_width = min(420, max(220, (self.page.width or 900) - 180))
             if isinstance(time_str, float):
                 time_str = time.strftime("%I:%M %p", time.localtime(time_str))
 
@@ -502,7 +505,7 @@ class MessagingPage(BasePage):
                     bgcolor="#DCFCE7",
                     border_radius=ft.border_radius.only(top_left=16, top_right=16, bottom_left=16, bottom_right=4),
                     content=b_content,
-                    constraints=ft.BoxConstraints(max_width=420)
+                    width=bubble_width,
                 )
 
                 bubbles.append(ft.Row([bubble], alignment=ft.MainAxisAlignment.END))
@@ -530,7 +533,7 @@ class MessagingPage(BasePage):
                     border=ft.border.all(1, "#E2E8F0"),
                     border_radius=ft.border_radius.only(top_left=16, top_right=16, bottom_left=4, bottom_right=16),
                     content=b_content,
-                    constraints=ft.BoxConstraints(max_width=420)
+                    width=bubble_width,
                 )
 
                 reaction_badge = ft.Container(

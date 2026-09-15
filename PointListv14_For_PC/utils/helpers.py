@@ -11,8 +11,14 @@ import binascii
 import threading
 from datetime import date, datetime, timedelta
 
+_LOGO_PATH_CACHE: str | None = None
+
 def get_logo_path() -> str:
     """Busca y devuelve la ruta absoluta o relativa existente del archivo logo.png."""
+    global _LOGO_PATH_CACHE
+    if _LOGO_PATH_CACHE:
+        return _LOGO_PATH_CACHE
+
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     candidates = [
         os.path.join(base_dir, "assets", "logo.png"),
@@ -23,8 +29,10 @@ def get_logo_path() -> str:
     ]
     for c in candidates:
         if os.path.isfile(c):
+            _LOGO_PATH_CACHE = c
             return c
-    return "assets/logo.png"
+    _LOGO_PATH_CACHE = "assets/logo.png"
+    return _LOGO_PATH_CACHE
 
 def get_logo_control(width: int = 28, height: int = 28):
     """Crea un control ft.Image con la imagen oficial del logo PointList."""

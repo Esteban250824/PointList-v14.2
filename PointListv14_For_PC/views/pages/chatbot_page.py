@@ -97,11 +97,14 @@ class ChatBotPage(BasePage):
         time.sleep(15.0)
         while not self._stop_sync:
             try:
+                from services.navigation_service import NavigationController
+                if NavigationController.current_view_name != "ChatBot":
+                    time.sleep(15.0)
+                    continue
                 if self._is_typing:
                     time.sleep(10.0)
                     continue
 
-                from services.navigation_service import NavigationController
                 new_sessions = self._db.obtener_sesiones_chatbot(self._uid)
                 
                 if new_sessions and new_sessions != self._sessions:

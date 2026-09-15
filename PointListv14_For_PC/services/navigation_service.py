@@ -9,6 +9,8 @@ class NavigationController:
     content_container: ft.Container = None
     current_page_instance = None
     current_view_name: str = "Login"
+    _background_sync_started: bool = False
+    _preload_lock = threading.Lock()
     
     # Sistema de Caché Global Ultra-Rápido
     cache = {
@@ -33,6 +35,10 @@ class NavigationController:
     def initialize(cls, page: ft.Page, container: ft.Container):
         cls.page = page
         cls.content_container = container
+
+        if cls._background_sync_started:
+            return
+        cls._background_sync_started = True
         
         # Sincronización en segundo plano optimizada
         def background_sync():
@@ -48,7 +54,7 @@ class NavigationController:
                         # Sincronización de datos en background
                         cls.preload_data(background=True)
                 except: pass
-                time.sleep(8)  # Sincronizar cada 8 segundos para "tiempo real"
+                time.sleep(20)
                 
         threading.Thread(target=background_sync, daemon=True).start()
 
@@ -124,6 +130,8 @@ class NavigationController:
             return
 
         def task():
+            if not cls._preload_lock.acquire(blocking=False):
+                return
             cls.cache["is_preloading"] = True
             try:
                 from services.database_service import db
@@ -159,11 +167,6 @@ class NavigationController:
                     def load_chatbot():
                         try:
                             cls.cache["chatbot_sessions"] = db.obtener_sesiones_chatbot(uid) or []
-                            if "ChatBot" not in cls.page_instances and cls.page:
-                                from views.pages.chatbot_page import ChatBotPage
-                                inst = ChatBotPage(cls.page)
-                                cls.page_instances["ChatBot"] = inst
-                                cls.page_contents["ChatBot"] = inst.build()
                         except: pass
 
                     # Ejecutar cargas principales en paralelo
@@ -187,6 +190,10 @@ class NavigationController:
                 pass
             finally:
                 cls.cache["is_preloading"] = False
+                try:
+                    cls._preload_lock.release()
+                except RuntimeError:
+                    pass
 
         if background:
             threading.Thread(target=task, daemon=True).start()
@@ -308,14 +315,16 @@ class NavigationController:
     def clear_user_session(cls):
         """Limpia todo el caché, datos de usuario, y destruye las instancias de páginas para garantizar una sesión 100% limpia sin estancamiento."""
         cls.cache["current_user"] = None
-        cls.cache["notes"] = None
-        cls.cache["events"] = None
-        cls.cache["tecnicas"] = None
+        cls.cache["notes"] = []
+        cls.cache["events"] = []
+        cls.cache["tecnicas"] = []
         cls.cache["user_config"] = {}
         cls.cache["messages"] = {}
         cls.cache["contacts"] = []
         cls.cache["online_users"] = []
         cls.cache["chatbot_sessions"] = []
+        cls.cache["chatbot_histories"] = {}
+        cls.cache["is_preloading"] = False
         cls.cache["last_sync"] = None
         cls.page_instances.clear()
         cls.page_contents.clear()

@@ -61,13 +61,16 @@ class CalendarPage(BasePage):
         while not self._stop_sync:
             try:
                 from services.navigation_service import NavigationController
+                if NavigationController.current_view_name != "Calendario":
+                    time.sleep(10)
+                    continue
                 new_events = self._db.obtener_eventos(self._uid) if self._uid else []
                 if new_events != self._events:
                     self._events = new_events
                     NavigationController.cache["events"] = new_events
                     self._refresh_ui(reload_data=False)
             except: pass
-            time.sleep(10)
+            time.sleep(25)
 
     def _events_for_date(self, d: date) -> list:
         result = []
