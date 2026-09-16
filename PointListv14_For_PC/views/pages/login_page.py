@@ -14,18 +14,9 @@ class LoginPage(BasePage):
         self.remember_me = ft.Checkbox(label="Mantener sesión iniciada", value=False, scale=1.0)
         self.error_banner = ft.Container(visible=False)
         self.loading_indicator = ft.ProgressRing(visible=False, width=20, height=20)
-
-        self.left_panel_image = None
-        for filename in [
-            "login_left_panel.png",
-            "login_left_panel.jpg",
-            "login_left_panel.jpeg",
-            "login_left_panel.webp",
-        ]:
-            path = os.path.join("assets", "figma_assets", filename)
-            if os.path.isfile(path):
-                self.left_panel_image = path
-                break
+        self._asset_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "assets")
+        )
 
     def _refresh_field_theme(self):
         """Recrea campos con colores según tema actual."""
@@ -35,7 +26,7 @@ class LoginPage(BasePage):
         border_color = "#475569" if is_dark else "#D1D5DB"
 
         self.email_field = ft.TextField(
-            hint_text="correo@ejemplo.com",
+            hint_text=self.translate("auth_email_hint"),
             prefix_icon=ft.Icons.EMAIL_OUTLINED,
             expand=True,
             border_radius=10,
@@ -50,7 +41,7 @@ class LoginPage(BasePage):
             on_change=self._validate_email,
         )
         self.pw_field = ft.TextField(
-            hint_text="Ingresa tu contraseña",
+            hint_text=self.translate("auth_password_hint"),
             prefix_icon=ft.Icons.LOCK_OUTLINED,
             password=True,
             can_reveal_password=True,
@@ -83,7 +74,7 @@ class LoginPage(BasePage):
         email = self.email_field.value.strip()
         if email:
             pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-            self.email_field.error_text = None if re.match(pattern, email) else "Formato de email inválido"
+            self.email_field.error_text = None if re.match(pattern, email) else self.translate("validation_invalid_email")
         else:
             self.email_field.error_text = None
         self.page.update()
@@ -91,10 +82,10 @@ class LoginPage(BasePage):
     def _validate_form(self) -> bool:
         valid = True
         if not self.email_field.value.strip():
-            self.email_field.error_text = "Email requerido"
+            self.email_field.error_text = self.translate("validation_email_required")
             valid = False
         if not self.pw_field.value:
-            self.pw_field.error_text = "Contraseña requerida"
+            self.pw_field.error_text = self.translate("validation_password_required")
             valid = False
         self.page.update()
         return valid
@@ -143,95 +134,59 @@ class LoginPage(BasePage):
             self.page.update()
 
     def _build_left_panel(self, is_dark: bool) -> ft.Container:
-        left_bg = "#F5F8FD" if not is_dark else "#111827"
-        title_color = "#0F172A" if not is_dark else "#F8FAFC"
-        subtitle_color = "#475569" if not is_dark else "#94A3B8"
-
-        panel_width = max(300, int((self.page.width or 1600) * 0.25))
-        content_width = panel_width - 80
-
-        if self.left_panel_image:
-            return ft.Container(
-                width=panel_width,
-                bgcolor=left_bg,
-                expand=True,
-                content=ft.Image(
-                    src=self.left_panel_image,
-                    fit=ft.ImageFit.COVER,
-                    expand=True,
-                ),
-            )
-
-        dot_grid = ft.Row(
-            [
-                ft.Container(width=10, height=10, border_radius=5, bgcolor="#0AA174")
-                for _ in range(26)
-            ],
-            spacing=14,
-            wrap=False,
-        )
-
-        shapes = ft.Stack([
-            ft.Container(
-                width=int(content_width * 0.3),
-                height=240,
-                left=0,
-                bottom=0,
-                border_radius=ft.border_radius.only(top_right=120, bottom_right=120),
-                bgcolor="#0AA174",
-            ),
-            ft.Container(
-                width=content_width,
-                height=240,
-                right=0,
-                bottom=0,
-                border_radius=ft.border_radius.only(top_left=120, bottom_left=120),
-                bgcolor="#0F4E7A",
-            ),
-            ft.Container(
-                width=int(content_width * 0.7),
-                height=180,
-                left=int(content_width * 0.18),
-                bottom=30,
-                border_radius=ft.border_radius.all(92),
-                bgcolor="#37729C",
-            ),
-        ], width=content_width, height=240, clip_behavior=ft.ClipBehavior.HARD_EDGE)
-
-        from utils.helpers import get_logo_control
-        logo_ctrl = get_logo_control(width=56, height=56)
+        panel_width = int((self.page.width or 1600) * 0.5)
+        panel_height = int(self.page.height or 900)
+        panel_image_height = int(panel_width * 1105 / 768)
+        image_src = self._get_left_panel_image_src()
 
         return ft.Container(
             width=panel_width,
-            bgcolor=left_bg,
-            padding=ft.padding.only(left=40, right=40, top=40, bottom=40),
-            content=ft.Column([
-                ft.Row([
-                    logo_ctrl,
-                    ft.Container(width=12),
-                    ft.Text("PointList", size=30, weight=ft.FontWeight.BOLD, color=title_color),
-                ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-                ft.Container(height=32),
-                ft.Text(
-                    "Tus notas, nuestra prioridad.",
-                    size=50,
-                    weight=ft.FontWeight.BOLD,
-                    color=title_color,
-                    width=content_width - 80,
-                ),
-                ft.Container(height=20),
-                ft.Text(
-                    "PointList te ayuda a organizar y dar seguimiento a tus calificaciones.",
-                    size=16,
-                    color=subtitle_color,
-                    width=content_width - 100,
-                ),
-                ft.Container(height=28),
-                dot_grid,
-                ft.Container(expand=True),
-                shapes,
-            ], expand=True, spacing=0),
+            height=panel_height,
+            bgcolor="#ECEDED" if not is_dark else "#111827",
+            expand=True,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+            alignment=ft.alignment.top_center,
+            content=ft.Stack(
+                width=panel_width,
+                height=panel_height,
+                clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                controls=[
+                    ft.Image(
+                        src=image_src,
+                        width=panel_width,
+                        height=panel_image_height,
+                        fit=ft.ImageFit.FILL,
+                        top=0,
+                        left=0,
+                    )
+                ],
+            ),
         )
+
+    def _get_left_panel_image_src(self) -> str:
+        from services.navigation_service import NavigationController
+
+        lang = (
+            NavigationController.cache.get("language")
+            or (self.page.client_storage.get("language") if self.page else None)
+            or self.language
+            or "es"
+        )
+        lang = "zh-TW" if lang in ("zh-TW", "zh_Hant", "zh-Hant") else lang.split("-")[0]
+        filename_by_lang = {
+            "es": "login_panel_es.png",
+            "en": "login_panel_en.png",
+            "it": "login_panel_it.png",
+            "pt": "login_panel_pt.png",
+            "de": "login_panel_de.png",
+            "zh-TW": "login_panel_zh-TW.png",
+            "zh": "login_panel_zh.png",
+        }
+        filename = filename_by_lang.get(lang, filename_by_lang["es"])
+        image_path = os.path.join(self._asset_root, "login_panels", filename)
+        if os.path.isfile(image_path):
+            return image_path
+        return os.path.join(self._asset_root, "login_panels", "login_panel_es.png")
 
     def _continue_with_google(self, e=None):
         """Abre directamente la página oficial de Google OAuth 2.0 en el navegador web (Chrome/Edge)."""
@@ -262,18 +217,19 @@ class LoginPage(BasePage):
         title_color = colors["text"]
         subtitle_color = colors["text_secondary"]
         link_color = "#07547B" if not is_dark else "#818CF8"
+        self.remember_me.label = self.translate("auth_remember")
 
         form_column = ft.Column([
-            ft.Text("¡Bienvenido de nuevo!", size=34, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_login_title"), size=34, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=10),
-            ft.Text("Por favor inicia sesión en tu cuenta.", size=16, color=subtitle_color),
+            ft.Text(self.translate("auth_login_subtitle"), size=16, color=subtitle_color),
             ft.Container(height=34),
             self.error_banner,
-            ft.Text("Correo electrónico", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_email"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=10),
             self.email_field,
             ft.Container(height=20),
-            ft.Text("Contraseña", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_password"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=10),
             self.pw_field,
             ft.Container(height=20),
@@ -281,14 +237,14 @@ class LoginPage(BasePage):
                 self.remember_me,
                 ft.Container(expand=True),
                 ft.TextButton(
-                    "¿Olvidaste la contraseña?",
+                    self.translate("auth_forgot"),
                     on_click=lambda e: NavigationController.update_view("Recuperar"),
                     style=ft.ButtonStyle(color=link_color),
                 ),
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             ft.Container(height=26),
             ft.ElevatedButton(
-                "Iniciar Sesión",
+                self.translate("auth_login_button"),
                 on_click=self._on_login,
                 bgcolor="#07547B",
                 color=ft.Colors.WHITE,
@@ -299,7 +255,7 @@ class LoginPage(BasePage):
             ft.Container(height=28),
             ft.Row([
                 ft.Container(expand=True, height=1, bgcolor="#E2E8F0"),
-                ft.Container(padding=ft.padding.symmetric(horizontal=12), content=ft.Text("o continua con", size=12, color=subtitle_color)),
+                ft.Container(padding=ft.padding.symmetric(horizontal=12), content=ft.Text(self.translate("auth_continue_with"), size=12, color=subtitle_color)),
                 ft.Container(expand=True, height=1, bgcolor="#E2E8F0"),
             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
             ft.Container(height=24),
@@ -310,10 +266,10 @@ class LoginPage(BasePage):
             ], alignment=ft.MainAxisAlignment.CENTER),
             ft.Container(height=28),
             ft.Row([
-                ft.Text("¿No tienes cuenta?", size=14, color=subtitle_color),
+                ft.Text(self.translate("auth_no_account"), size=14, color=subtitle_color),
                 ft.Container(width=8),
                 ft.TextButton(
-                    "Regístrate aquí",
+                    self.translate("auth_register_here"),
                     on_click=lambda e: NavigationController.update_view("Registro"),
                     style=ft.ButtonStyle(color="#FF4D6E", text_style=ft.TextStyle(size=14)),
                 ),

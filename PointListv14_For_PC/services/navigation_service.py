@@ -337,6 +337,13 @@ class NavigationController:
     @classmethod
     def logout(cls):
         """Cierra la sesión del usuario y limpia el caché 100%."""
+        if cls.page:
+            try:
+                if cls.page.drawer:
+                    cls.page.drawer.open = False
+                    cls.page.drawer = None
+            except:
+                pass
         cls.clear_user_session()
         cls.update_view("Login", force_rebuild=True)
 
@@ -397,6 +404,10 @@ class NavigationController:
             cls.page_contents[view_name] = cls.page_instances[view_name].build()
 
         cls.current_page_instance = cls.page_instances[view_name]
+        try:
+            cls.current_page_instance.localize_control_tree(cls.page_contents[view_name])
+        except Exception:
+            pass
         cls.content_container.content = cls.page_contents[view_name]
         bg = "#0F172A" if cls.page.theme_mode == ft.ThemeMode.DARK else "#F9FAFB"
         cls.content_container.bgcolor = bg

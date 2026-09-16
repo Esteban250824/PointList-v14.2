@@ -127,7 +127,7 @@ class NotesPage(BasePage):
             padding=ft.padding.symmetric(horizontal=16, vertical=14),
             bgcolor=colors["surface"],
             border_radius=16,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             expand=True,
             content=ft.Row([
                 ft.Container(
@@ -177,6 +177,7 @@ class NotesPage(BasePage):
 
     def _create_bar_chart(self):
         """Crea gráfica de barras por asignatura idéntica a Figma."""
+        colors = self._get_theme_colors()
         if not self._notas:
             return ft.Container(
                 height=220,
@@ -225,7 +226,7 @@ class NotesPage(BasePage):
                 ft.ChartAxisLabel(
                     idx,
                     ft.Container(
-                        content=ft.Text(subj, size=11, color="#475569", weight="w500"),
+                        content=ft.Text(subj, size=11, color=colors["text_secondary"], weight="w500"),
                         alignment=ft.alignment.center
                     )
                 )
@@ -243,7 +244,7 @@ class NotesPage(BasePage):
             interactive=True,
             expand=True,
             horizontal_grid_lines=ft.ChartGridLines(
-                color="#E2E8F0", width=1, interval=1
+                color=colors["border"], width=1, interval=1
             ),
         )
         
@@ -251,6 +252,7 @@ class NotesPage(BasePage):
 
     def _create_line_chart(self) -> ft.Control:
         """Crea la gráfica de líneas (LineChart) de evolución del rendimiento por materia y general."""
+        colors = self._get_theme_colors()
         notes = self._notas if self._notas else self.DEFAULT_NOTES
         
         filter_subject = getattr(self, "chart_subject_filter", "General")
@@ -261,7 +263,7 @@ class NotesPage(BasePage):
             return ft.Container(
                 alignment=ft.alignment.center,
                 height=180,
-                content=ft.Text(f"No hay notas suficientes para la gráfica de {filter_subject}", color="#64748B", size=13)
+                content=ft.Text(f"No hay notas suficientes para la gráfica de {filter_subject}", color=colors["text_secondary"], size=13)
             )
 
         sorted_notes = sorted(notes, key=lambda x: str(x.get("fecha", "")))
@@ -276,7 +278,7 @@ class NotesPage(BasePage):
                 ft.ChartAxisLabel(
                     idx,
                     ft.Container(
-                        content=ft.Text(lbl_text, size=10, color="#475569", weight="bold"),
+                        content=ft.Text(lbl_text, size=10, color=colors["text_secondary"], weight="bold"),
                         alignment=ft.alignment.center
                     )
                 )
@@ -299,7 +301,7 @@ class NotesPage(BasePage):
             min_y=0, max_y=5.0,
             interactive=True,
             expand=True,
-            horizontal_grid_lines=ft.ChartGridLines(color="#E2E8F0", width=1, interval=1)
+            horizontal_grid_lines=ft.ChartGridLines(color=colors["border"], width=1, interval=1)
         )
 
     def _refresh_chart_view(self):
@@ -359,7 +361,7 @@ class NotesPage(BasePage):
         self.chart_container.content = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text("Rendimiento Académico", size=16, weight="bold", color="#0F172A"),
+                    ft.Text("Rendimiento Académico", size=16, weight="bold", color=colors["text"]),
                     ft.Container(expand=True),
                     subj_dd,
                     btn_bars,
@@ -371,7 +373,7 @@ class NotesPage(BasePage):
             padding=ft.padding.all(20),
             bgcolor=colors["surface"],
             border_radius=16,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
         )
 
     def _create_note_card(self, note):
@@ -403,7 +405,7 @@ class NotesPage(BasePage):
             padding=ft.padding.symmetric(horizontal=14, vertical=12),
             bgcolor=colors["surface"],
             border_radius=14,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             content=ft.Column([
                 ft.Row([
                     ft.Container(
@@ -413,8 +415,8 @@ class NotesPage(BasePage):
                     ),
                     ft.Container(width=10),
                     ft.Column([
-                        ft.Text(note.get("asignatura", ""), size=13, weight="bold", color="#0F172A"),
-                        ft.Text(fecha, size=10, color="#64748B"),
+                        ft.Text(note.get("asignatura", ""), size=13, weight="bold", color=colors["text"]),
+                        ft.Text(fecha, size=10, color=colors["text_muted"]),
                     ], expand=True, spacing=1),
                     ft.PopupMenuButton(
                         icon=ft.Icons.MORE_VERT,
@@ -426,7 +428,7 @@ class NotesPage(BasePage):
                     )
                 ], spacing=0, vertical_alignment=ft.CrossAxisAlignment.CENTER),
                 ft.Container(height=6),
-                ft.Text(comment, size=11, color="#64748B", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                ft.Text(comment, size=11, color=colors["text_muted"], max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
             ], spacing=0)
         )
 
@@ -455,12 +457,12 @@ class NotesPage(BasePage):
                         content=ft.Column([
                             ft.Container(
                                 width=56, height=56, border_radius=28,
-                                bgcolor="#F1F5F9", alignment=ft.alignment.center,
-                                content=ft.Icon(ft.Icons.NOTE_ADD_OUTLINED, size=28, color="#64748B")
+                                bgcolor=colors["background"], alignment=ft.alignment.center,
+                                content=ft.Icon(ft.Icons.NOTE_ADD_OUTLINED, size=28, color=colors["text_muted"])
                             ),
                             ft.Container(height=10),
-                            ft.Text("Aún no tienes calificaciones registradas", color="#0F172A", size=14, weight=ft.FontWeight.BOLD),
-                            ft.Text("Tus calificaciones registradas o asignadas por tus profesores aparecerán aquí.", color="#64748B", size=12, text_align=ft.TextAlign.CENTER),
+                            ft.Text("Aún no tienes calificaciones registradas", color=colors["text"], size=14, weight=ft.FontWeight.BOLD),
+                            ft.Text("Tus calificaciones registradas o asignadas por tus profesores aparecerán aquí.", color=colors["text_secondary"], size=12, text_align=ft.TextAlign.CENTER),
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER)
                     )
                 ]
@@ -591,7 +593,7 @@ class NotesPage(BasePage):
             content=ft.Container(
                 width=440, height=400,
                 content=ft.Column([
-                    ft.Text("Selecciona el estudiante y la asignatura para asignar la nota:", size=12, color="#64748B"),
+                    ft.Text("Selecciona el estudiante y la asignatura para asignar la nota:", size=12, color=colors["text_secondary"]),
                     ft.Container(height=8),
                     student_dropdown,
                     ft.Container(height=8),
@@ -636,12 +638,12 @@ class NotesPage(BasePage):
             self.page.close(dlg)
 
         modal_header = ft.Row([
-            ft.Text("Tus calificaciones", size=20, weight="bold", color="#0F172A"),
+            ft.Text("Tus calificaciones", size=20, weight="bold", color=colors["text"]),
             ft.Container(expand=True),
             ft.IconButton(
                 icon=ft.Icons.ZOOM_IN_MAP,
                 icon_size=20,
-                icon_color="#64748B",
+                icon_color=colors["text_muted"],
                 tooltip="Contraer",
                 on_click=_close_modal,
             )
@@ -654,7 +656,8 @@ class NotesPage(BasePage):
             border_radius=10,
             value=self.search_term,
             bgcolor=colors["surface"],
-            border_color="#E2E8F0",
+            border_color=colors["border"],
+            color=colors["text"],
             on_change=_on_modal_search_change,
         )
 
@@ -702,7 +705,7 @@ class NotesPage(BasePage):
         colors = self._get_theme_colors()
 
         events_list = ft.Column([
-            ft.Text("Próximos eventos", size=15, weight="bold", color="#0F172A"),
+            ft.Text("Próximos eventos", size=15, weight="bold", color=colors["text"]),
             ft.Container(height=8),
         ], spacing=8)
 
@@ -775,9 +778,9 @@ class NotesPage(BasePage):
                 ft.Container(
                     padding=ft.padding.symmetric(vertical=16, horizontal=10),
                     alignment=ft.alignment.center,
-                    bgcolor="#F8FAFC",
+                    bgcolor=colors["background"],
                     border_radius=10,
-                    border=ft.border.all(1, "#E2E8F0"),
+                    border=ft.border.all(1, colors["border"]),
                     content=ft.Row([
                         ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=18, color="#10B981"),
                         ft.Text("bien, no tienes eventos por ahora", size=12, color=colors["text_secondary"], weight=ft.FontWeight.W_500),
@@ -791,7 +794,7 @@ class NotesPage(BasePage):
                         padding=ft.padding.all(10),
                         bgcolor=colors["surface"],
                         border_radius=10,
-                        border=ft.border.all(1, "#F1F5F9"),
+                        border=ft.border.all(1, colors["border"]),
                         content=ft.Row([
                             ft.Container(
                                 width=32, height=32, border_radius=8,
@@ -801,8 +804,8 @@ class NotesPage(BasePage):
                             ),
                             ft.Container(width=10),
                             ft.Column([
-                                ft.Text(ev["title"], size=12, weight="bold", color="#0F172A", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
-                                ft.Text(ev["date"], size=9.5, color="#64748B"),
+                                ft.Text(ev["title"], size=12, weight="bold", color=colors["text"], max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                                ft.Text(ev["date"], size=9.5, color=colors["text_muted"]),
                             ], spacing=1, expand=True),
                         ], spacing=0, vertical_alignment=ft.CrossAxisAlignment.CENTER)
                     )
@@ -814,8 +817,8 @@ class NotesPage(BasePage):
                 text="Ver Calendario Completo",
                 on_click=self._go_to_calendar,
                 style=ft.ButtonStyle(
-                    color="#475569",
-                    side=ft.BorderSide(1, "#E2E8F0"),
+                    color=colors["text_secondary"],
+                    side=ft.BorderSide(1, colors["border"]),
                     shape=ft.RoundedRectangleBorder(radius=8),
                 ),
                 height=34,
@@ -853,8 +856,8 @@ class NotesPage(BasePage):
             pie,
             ft.Container(
                 content=ft.Column([
-                    ft.Text(str(total), size=16, weight="bold", color="#0F172A"),
-                    ft.Text("Total", size=9, color="#64748B"),
+                    ft.Text(str(total), size=16, weight="bold", color=colors["text"]),
+                    ft.Text("Total", size=9, color=colors["text_muted"]),
                 ], alignment=ft.MainAxisAlignment.CENTER, spacing=0,
                    horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                 alignment=ft.alignment.center,
@@ -865,7 +868,7 @@ class NotesPage(BasePage):
             return ft.Row([
                 ft.Container(width=8, height=8, border_radius=2, bgcolor=color),
                 ft.Container(width=4),
-                ft.Text(label, size=9.5, color="#0F172A", expand=True),
+                ft.Text(label, size=9.5, color=colors["text"], expand=True),
             ])
 
         total_d = total if total > 0 else 1
@@ -873,10 +876,10 @@ class NotesPage(BasePage):
             padding=ft.padding.all(14),
             bgcolor=colors["surface"],
             border_radius=14,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             content=ft.Column([
                 ft.Text("Distribución de calificaciones", size=13,
-                        weight="bold", color="#0F172A"),
+                        weight="bold", color=colors["text"]),
                 ft.Container(height=10),
                 ft.Row([
                     chart_stack,
@@ -893,16 +896,16 @@ class NotesPage(BasePage):
         selected_tip = random.choice(self.TIPS_LIST)
         tip_card = ft.Container(
             padding=ft.padding.all(12),
-            bgcolor="#F8FAFC",
+            bgcolor=colors["surface"],
             border_radius=12,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             content=ft.Column([
                 ft.Row([
                     ft.Icon(ft.Icons.LIGHTBULB_OUTLINE, color="#8B5CF6", size=18),
-                    ft.Text("Consejo del día", size=12, weight="bold", color="#0F172A"),
+                    ft.Text("Consejo del día", size=12, weight="bold", color=colors["text"]),
                 ], spacing=6),
                 ft.Container(height=6),
-                ft.Text(selected_tip, size=10.5, color="#64748B"),
+                ft.Text(selected_tip, size=10.5, color=colors["text_secondary"]),
             ], spacing=0)
         )
 
@@ -910,7 +913,7 @@ class NotesPage(BasePage):
             padding=ft.padding.all(14),
             bgcolor=colors["surface"],
             border_radius=14,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             content=self.sidebar_container,
         )
 
@@ -946,7 +949,8 @@ class NotesPage(BasePage):
             prefix_icon=ft.Icons.SEARCH,
             border_radius=10,
             bgcolor=colors["surface"],
-            border_color="#E2E8F0",
+            border_color=colors["border"],
+            color=colors["text"],
             on_change=self._on_main_search_change,
             expand=True,
             height=40,
@@ -968,17 +972,17 @@ class NotesPage(BasePage):
             padding=ft.padding.all(16),
             bgcolor=colors["surface"],
             border_radius=16,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             content=ft.Column([
                 ft.Row([
-                    ft.Text("Gestión de Calificaciones" if is_profesor else "Tus calificaciones", size=15, weight="bold", color="#0F172A"),
+                    ft.Text("Gestión de Calificaciones" if is_profesor else "Tus calificaciones", size=15, weight="bold", color=colors["text"]),
                     ft.Container(expand=True),
                     add_note_btn,
                     ft.Container(width=6 if is_profesor else 0),
                     ft.IconButton(
                         icon=ft.Icons.ZOOM_OUT_MAP,
                         icon_size=18,
-                        icon_color="#64748B",
+                        icon_color=colors["text_muted"],
                         tooltip="Expandir",
                         on_click=lambda e: self._show_expanded_notes_dialog(),
                     ),

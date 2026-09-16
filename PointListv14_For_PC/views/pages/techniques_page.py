@@ -125,38 +125,54 @@ class StudyMethodsPage(BasePage):
         if "pomodoro" in title_lower:
             return {
                 "key": "pomodoro",
+                "title": self.translate("tech_pomodoro_detail_title"),
                 "icon_color": "#EA580C",
                 "icon_bg": "#FFEDD5",
                 "icon": ft.Icons.TIMER_OUTLINED,
                 "text_color": "#EA580C",
-                "subtitle": "Gestión del tiempo en bloques de 25 min de enfoque intenso y descansos cortos.",
-                "what_is": "La técnica Pomodoro divide tu tiempo de estudio en intervalos de 25 minutos de concentración total, separados por pausas breves de 5 minutos. Tras 4 bloques, se realiza un descanso prolongado de 20-30 minutos.",
+                "subtitle": self.translate("tech_pomodoro_subtitle"),
+                "what_is": self.translate("tech_pomodoro_what_is"),
                 "steps": [
-                    "Selecciona una sola tarea a realizar.",
-                    "Configura el temporizador a 25 minutos.",
-                    "Trabaja sin distracciones hasta que suene la señal.",
-                    "Toma un descanso corto de 5 minutos.",
-                    "Tras 4 pomodoros, tómate un descanso largo de 20-30 minutos."
+                    self.translate("tech_pomodoro_step_1"),
+                    self.translate("tech_pomodoro_step_2"),
+                    self.translate("tech_pomodoro_step_3"),
+                    self.translate("tech_pomodoro_step_4"),
+                    self.translate("tech_pomodoro_step_5"),
                 ],
-                "bullets": ["Aumenta la concentración", "Ideal para evitar la fatiga", "Recomendado: 25 min + 5 min de descanso"]
+                "how_steps": [
+                    (ft.Icons.CONTENT_PASTE, self.translate("tech_pomodoro_how_1_title"), self.translate("tech_pomodoro_how_1_desc")),
+                    (ft.Icons.SCHEDULE, self.translate("tech_pomodoro_how_2_title"), self.translate("tech_pomodoro_how_2_desc")),
+                    (ft.Icons.ADS_CLICK, self.translate("tech_pomodoro_how_3_title"), self.translate("tech_pomodoro_how_3_desc")),
+                    (ft.Icons.LOCAL_CAFE_OUTLINED, self.translate("tech_pomodoro_how_4_title"), self.translate("tech_pomodoro_how_4_desc")),
+                ],
+                "bullets": [
+                    self.translate("tech_pomodoro_bullet_focus"),
+                    self.translate("tech_pomodoro_bullet_fatigue"),
+                    self.translate("tech_pomodoro_bullet_recommended"),
+                ],
             }
         elif "mapa" in title_lower:
             return {
                 "key": "mindmap",
+                "title": self.translate("tech_mindmap_title"),
                 "icon_color": "#7C3AED",
                 "icon_bg": "#F3E8FF",
                 "icon": ft.Icons.ACCOUNT_TREE_OUTLINED,
                 "text_color": "#7C3AED",
-                "subtitle": "Organización visual de ideas conectadas en ramas concéntricas desde un nodo central.",
-                "what_is": "Un Mapa Mental conecta ideas secundarias a un concepto central a través de ramas, colores e imágenes. Estimula ambos hemisferios cerebrales y facilita la memorización de estructuras complejas.",
+                "subtitle": self.translate("tech_mindmap_subtitle"),
+                "what_is": self.translate("tech_mindmap_what_is"),
                 "steps": [
-                    "Escribe el tema o concepto central en el centro de tu hoja.",
-                    "Dibuja ramas principales para los subtemas esenciales.",
-                    "Añade ramas secundarias con palabras clave breves.",
-                    "Utiliza distintos colores e íconos visuales.",
-                    "Revisa la jerarquía y conexiones entre ramas."
+                    self.translate("tech_mindmap_step_1"),
+                    self.translate("tech_mindmap_step_2"),
+                    self.translate("tech_mindmap_step_3"),
+                    self.translate("tech_mindmap_step_4"),
+                    self.translate("tech_mindmap_step_5"),
                 ],
-                "bullets": ["Mejora la comprensión visual", "Ideal para esquematizar materias", "Recomendado: 20-30 min"]
+                "bullets": [
+                    self.translate("tech_mindmap_bullet_1"),
+                    self.translate("tech_mindmap_bullet_2"),
+                    self.translate("tech_mindmap_bullet_3"),
+                ],
             }
         elif "cornell" in title_lower:
             return {
@@ -179,56 +195,71 @@ class StudyMethodsPage(BasePage):
         elif "espaciado" in title_lower or "repet" in title_lower:
             return {
                 "key": "spaced",
+                "title": self.translate("tech_spaced_title"),
                 "icon_color": "#4F46E5",
                 "icon_bg": "#EEF2FF",
                 "icon": ft.Icons.AUTORENEW,
                 "text_color": "#4F46E5",
-                "subtitle": "Repetición espaciada en intervalos de tiempo para aplanar la curva del olvido.",
-                "what_is": "La repetición espaciada programa repasos a intervalos cada vez mayores (Día 1, Día 3, Día 7, Día 14, Día 30), consolidando la información en la memoria a largo plazo de forma permanente.",
+                "subtitle": self.translate("tech_spaced_subtitle"),
+                "what_is": self.translate("tech_spaced_what_is"),
                 "steps": [
-                    "Estudia un tema por primera vez de forma profunda.",
-                    "Realiza el 1er repaso al cabo de 24 horas (Día 1).",
-                    "Programa el 2do repaso a los 3 días.",
-                    "Efectúa el 3er repaso a los 7 días y el 4to a los 14 días.",
-                    "Consolida el conocimiento final al día 30."
+                    self.translate("tech_spaced_step_1"),
+                    self.translate("tech_spaced_step_2"),
+                    self.translate("tech_spaced_step_3"),
+                    self.translate("tech_spaced_step_4"),
+                    self.translate("tech_spaced_step_5"),
                 ],
-                "bullets": ["Vence la curva del olvido", "Retención a largo plazo", "Recomendado: 10-15 min por sesión"]
+                "bullets": [
+                    self.translate("tech_spaced_bullet_1"),
+                    self.translate("tech_spaced_bullet_2"),
+                    self.translate("tech_spaced_bullet_3"),
+                ],
             }
         elif "feynman" in title_lower:
             return {
                 "key": "feynman",
+                "title": self.translate("tech_feynman_title"),
                 "icon_color": "#9A3412",
                 "icon_bg": "#FBEBDF",
                 "icon": ft.Icons.PSYCHOLOGY_OUTLINED,
                 "text_color": "#9A3412",
-                "subtitle": "Aprende cualquier concepto explicándolo con tus propias palabras en lenguaje simple.",
-                "what_is": "La Técnica Feynman sostiene que si no puedes explicar un tema de manera sencilla como si se lo enseñaras a un niño de 5 años, realmente no lo has comprendido del todo. Identifica tus vacíos y simplifícalo.",
+                "subtitle": self.translate("tech_feynman_subtitle"),
+                "what_is": self.translate("tech_feynman_what_is"),
                 "steps": [
-                    "Elige el concepto que deseas aprender.",
-                    "Explícalo por escrito o en voz alta usando lenguaje ultra sencillo.",
-                    "Identifica en qué partes te trabaste o utilizaste jerga confusa.",
-                    "Vuelve al material original para llenar esos vacíos.",
-                    "Crea una analogía o metáfora sencilla para recordarlo."
+                    self.translate("tech_feynman_step_1"),
+                    self.translate("tech_feynman_step_2"),
+                    self.translate("tech_feynman_step_3"),
+                    self.translate("tech_feynman_step_4"),
+                    self.translate("tech_feynman_step_5"),
                 ],
-                "bullets": ["Comprensión profunda", "Revela vacíos de conocimiento", "Recomendado: 25-40 min"]
+                "bullets": [
+                    self.translate("tech_feynman_bullet_1"),
+                    self.translate("tech_feynman_bullet_2"),
+                    self.translate("tech_feynman_bullet_3"),
+                ],
             }
         elif "smart" in title_lower:
             return {
                 "key": "smart",
+                "title": self.translate("tech_smart_title"),
                 "icon_color": "#0284C7",
                 "icon_bg": "#E0F2FE",
                 "icon": ft.Icons.LIGHTBULB_OUTLINE,
                 "text_color": "#0284C7",
-                "subtitle": "Metodología para definir objetivos Específicos, Medibles, Alcanzables, Relevantes y a Tiempo.",
-                "what_is": "El Método SMART te enseña a redactar metas de estudio precisas: Específicas (S), Medibles (M), Alcanzables (A), Relevantes (R) y con Tiempo definido (T).",
+                "subtitle": self.translate("tech_smart_subtitle"),
+                "what_is": self.translate("tech_smart_what_is"),
                 "steps": [
-                    "S - Específico: Define exactamente qué quieres lograr.",
-                    "M - Medible: Establece cómo medirás tu progreso.",
-                    "A - Alcanzable: Asegúrate de que sea realista con tus recursos.",
-                    "R - Relevante: Confirma que aporte a tus metas académicas.",
-                    "T - Tiempo: Asigna una fecha límite estricta."
+                    self.translate("tech_smart_step_1"),
+                    self.translate("tech_smart_step_2"),
+                    self.translate("tech_smart_step_3"),
+                    self.translate("tech_smart_step_4"),
+                    self.translate("tech_smart_step_5"),
                 ],
-                "bullets": ["Formulación clara de metas", "Evita la procrastinación", "Recomendado: Inicio de semana"]
+                "bullets": [
+                    self.translate("tech_smart_bullet_1"),
+                    self.translate("tech_smart_bullet_2"),
+                    self.translate("tech_smart_bullet_3"),
+                ],
             }
         elif "tarjeta" in title_lower or "flashcard" in title_lower or "memoria" in title_lower:
             return {
@@ -251,20 +282,25 @@ class StudyMethodsPage(BasePage):
         elif "sq3r" in title_lower or "lectura" in title_lower:
             return {
                 "key": "sq3r",
+                "title": self.translate("tech_sq3r_title"),
                 "icon_color": "#16A34A",
                 "icon_bg": "#DCFCE7",
                 "icon": ft.Icons.MENU_BOOK_OUTLINED,
                 "text_color": "#16A34A",
-                "subtitle": "Método de lectura comprensiva en 5 etapas: Survey, Question, Read, Recite, Review.",
-                "what_is": "SQ3R es un método de lectura activa de 5 pasos: Inspeccionar (Survey), Preguntar (Question), Leer (Read), Recitar (Recite) y Repasar (Review).",
+                "subtitle": self.translate("tech_sq3r_subtitle"),
+                "what_is": self.translate("tech_sq3r_what_is"),
                 "steps": [
-                    "S - Survey (Inspeccionar): Hojea títulos, imágenes y resúmenes.",
-                    "Q - Question (Preguntar): Transforma títulos en preguntas.",
-                    "R1 - Read (Leer): Lee buscando responder las preguntas.",
-                    "R2 - Recite (Recitar): Explica las secciones con tus palabras.",
-                    "R3 - Review (Repasar): Revisa tus notas y autoevalúate."
+                    self.translate("tech_sq3r_step_1"),
+                    self.translate("tech_sq3r_step_2"),
+                    self.translate("tech_sq3r_step_3"),
+                    self.translate("tech_sq3r_step_4"),
+                    self.translate("tech_sq3r_step_5"),
                 ],
-                "bullets": ["Lectura analítica profunda", "Ideal para capítulos extensos", "Recomendado: 30-45 min"]
+                "bullets": [
+                    self.translate("tech_sq3r_bullet_1"),
+                    self.translate("tech_sq3r_bullet_2"),
+                    self.translate("tech_sq3r_bullet_3"),
+                ],
             }
 
         return {
@@ -287,15 +323,18 @@ class StudyMethodsPage(BasePage):
 
     def _build_technique_card(self, tech: dict) -> ft.Container:
         colors = self._get_theme_colors()
+        is_dark = self.page and self.page.theme_mode == ft.ThemeMode.DARK
         title = tech.get("titulo", "")
         info = self._get_technique_info(title)
+        display_title = info.get("title", title)
+        display_description = info["subtitle"] if info.get("key") != "generic" else tech.get("descripcion", info["subtitle"])
 
         def _show_detail(e):
             self._current_view = "detail"
             self._show_technique_detail(tech)
 
         bullet_controls = [
-            ft.Text(b, size=11, color="#64748B", weight="w500") for b in info["bullets"]
+            ft.Text(b, size=11, color=colors["text_muted"], weight="w500") for b in info["bullets"]
         ]
 
         card_header = ft.Row([
@@ -308,17 +347,17 @@ class StudyMethodsPage(BasePage):
             ),
             ft.Container(width=10),
             ft.Column([
-                ft.Text(title, size=16, weight="bold", color="#0F172A", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
-                ft.Text(tech.get("descripcion", info["subtitle"]), size=11, color="#64748B", max_lines=2, overflow=ft.TextOverflow.ELLIPSIS),
+                ft.Text(display_title, size=16, weight="bold", color=colors["text"], max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                ft.Text(display_description, size=11, color=colors["text_muted"], max_lines=2, overflow=ft.TextOverflow.ELLIPSIS),
             ], expand=True, spacing=2),
         ], alignment=ft.MainAxisAlignment.START, vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
         card_footer = ft.Container(
-            border=ft.border.only(top=ft.border.BorderSide(1, "#E2E8F0")),
+            border=ft.border.only(top=ft.border.BorderSide(1, colors["border"])),
             padding=ft.padding.only(top=10, bottom=2),
             alignment=ft.alignment.center,
             content=ft.Row([
-                ft.Text("Ver detalle y guía", size=13, weight="bold", color=info["text_color"]),
+                ft.Text(self.translate("techniques_view_detail"), size=13, weight="bold", color=info["text_color"]),
                 ft.Icon(ft.Icons.ARROW_FORWARD, size=14, color=info["text_color"])
             ], spacing=4, alignment=ft.MainAxisAlignment.CENTER),
             on_click=_show_detail,
@@ -329,8 +368,10 @@ class StudyMethodsPage(BasePage):
             padding=ft.padding.symmetric(horizontal=18, vertical=18),
             bgcolor=colors["surface"],
             border_radius=16,
-            border=ft.border.all(1, "#E2E8F0"),
-            shadow=ft.BoxShadow(blur_radius=10, spread_radius=-2, color=ft.Colors.with_opacity(0.06, ft.Colors.BLACK)),
+            border=ft.border.all(1, colors["border"]),
+            shadow=ft.BoxShadow(blur_radius=10, spread_radius=-2, color=ft.Colors.with_opacity(0.18 if is_dark else 0.06, ft.Colors.BLACK)),
+            on_click=_show_detail,
+            ink=True,
             content=ft.Column([
                 card_header,
                 ft.Container(height=12),
@@ -341,11 +382,18 @@ class StudyMethodsPage(BasePage):
         )
 
     def _show_technique_detail(self, tech: dict):
-        """Muestra pantalla de detalle de técnica (Fase 2 Rediseñada e Innovadora)."""
+        """Muestra la fase 2 con diseño diferenciado para Pomodoro y técnicas generales."""
         colors = self._get_theme_colors()
-        title = tech.get("titulo", "Técnica")
-        info = self._get_technique_info(title)
+        is_dark = self.page.theme_mode == ft.ThemeMode.DARK
+        raw_title = tech.get("titulo", "Técnica")
+        info = self._get_technique_info(raw_title)
+        title = info.get("title", raw_title)
         navbar = self._build_navbar(title)
+        is_pomodoro = info["key"] == "pomodoro"
+        card_bg = colors["surface"]
+        border_color = colors["border"]
+        muted = colors["text_secondary"]
+        page_bg = colors["background"]
 
         def _apply_technique(e):
             self._current_view = "apply"
@@ -356,120 +404,417 @@ class StudyMethodsPage(BasePage):
             from services.navigation_service import NavigationController
             NavigationController.update_view("Tecnicas")
 
-        step_rows = []
-        for idx, step_str in enumerate(info["steps"], start=1):
-            step_rows.append(
-                ft.Container(
-                    padding=ft.padding.all(12),
-                    bgcolor="#F8FAFC",
-                    border_radius=12,
-                    border=ft.border.all(1, "#E2E8F0"),
-                    content=ft.Row([
-                        ft.Container(
-                            width=32, height=32, border_radius=16,
-                            bgcolor=info["icon_color"],
-                            alignment=ft.alignment.center,
-                            content=ft.Text(str(idx), color="white", weight="bold", size=14)
-                        ),
-                        ft.Container(width=10),
-                        ft.Text(step_str, size=13, color="#0F172A", weight="w500", expand=True)
-                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
-                )
-            )
-
-        left_card = ft.Container(
-            expand=True,
-            padding=ft.padding.all(24),
-            bgcolor=colors["surface"],
-            border_radius=16,
-            border=ft.border.all(1, "#E2E8F0"),
-            content=ft.Column([
-                ft.Row([
+        def _step_icon(icon, index, heading, text):
+            return ft.Column(
+                [
                     ft.Container(
-                        width=56, height=56, border_radius=28,
-                        bgcolor=info["icon_bg"],
+                        width=34,
+                        height=34,
+                        border_radius=17,
+                        bgcolor="#57E249",
                         alignment=ft.alignment.center,
-                        content=ft.Icon(info["icon"], size=28, color=info["icon_color"]),
-                    ),
-                    ft.Container(width=12),
-                    ft.Column([
-                        ft.Text(title, size=24, weight="bold", color=colors["text"]),
-                        ft.Text(tech.get("categoria", "Técnica de Estudio"), size=12, color=info["text_color"], weight="bold"),
-                    ], spacing=2, expand=True)
-                ]),
-                ft.Container(height=16),
-                ft.Text("¿Qué es?", size=16, weight="bold", color=colors["text"]),
-                ft.Container(height=6),
-                ft.Text(info["what_is"], size=13, color=colors["text_secondary"]),
-                ft.Container(height=18),
-                ft.Text("Beneficios clave", size=16, weight="bold", color=colors["text"]),
-                ft.Container(height=6),
-                ft.Column([
-                    ft.Row([ft.Icon(ft.Icons.CHECK_CIRCLE, color="#16A34A", size=16), ft.Text(b, size=12, color=colors["text"])])
-                    for b in info["bullets"]
-                ], spacing=6),
-            ], spacing=0)
-        )
-
-        right_card = ft.Container(
-            expand=True,
-            padding=ft.padding.all(24),
-            bgcolor=colors["surface"],
-            border_radius=16,
-            border=ft.border.all(1, "#E2E8F0"),
-            content=ft.Column([
-                ft.Text("Procedimiento paso a paso", size=18, weight="bold", color=colors["text"]),
-                ft.Text("Sigue estos 5 pasos recomendados para aprovechar al máximo esta técnica:", size=12, color=colors["text_secondary"]),
-                ft.Container(height=14),
-                ft.Column(step_rows, spacing=10),
-            ], spacing=0)
-        )
-
-        detail_content = ft.Column([
-            navbar,
-            ft.Container(
-                expand=True,
-                padding=ft.padding.symmetric(horizontal=32, vertical=20),
-                content=ft.Column([
-                    ft.GestureDetector(
-                        on_tap=_back,
-                        content=ft.Row([
-                            ft.Icon(ft.Icons.ARROW_BACK, size=20, color="#4F46E5"),
-                            ft.Text("Volver al catálogo", size=13, weight="bold", color="#4F46E5"),
-                        ], spacing=6)
+                        content=ft.Text(str(index), color="white", weight="bold", size=14),
                     ),
                     ft.Container(height=16),
-                    ft.Row([
-                        left_card,
-                        ft.Container(width=20),
-                        right_card,
-                    ], vertical_alignment=ft.CrossAxisAlignment.START),
-                    ft.Container(height=24),
-                    ft.Row([
-                        ft.ElevatedButton(
-                            "← Volver",
-                            bgcolor=ft.Colors.GREY_300,
-                            color="#0F172A",
-                            width=140,
+                    ft.Container(
+                        width=88,
+                        height=88,
+                        border_radius=44,
+                        bgcolor="#D4FFD8" if not is_dark else "#14532D",
+                        alignment=ft.alignment.center,
+                        content=ft.Icon(icon, size=42, color="#000000" if not is_dark else "#F8FAFC"),
+                    ),
+                    ft.Container(height=14),
+                    ft.Text(heading, size=13, weight="bold", color=colors["text"], text_align=ft.TextAlign.CENTER),
+                    ft.Text(text, size=12, color=muted, text_align=ft.TextAlign.CENTER, width=150),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=0,
+            )
+
+        def _benefit_card(text):
+            return ft.Container(
+                height=84,
+                padding=ft.padding.symmetric(horizontal=18),
+                border_radius=12,
+                bgcolor="#ECFFE7" if not is_dark else "#12351E",
+                border=ft.border.all(1, "#A7DDA0" if not is_dark else "#2F6B3B"),
+                content=ft.Row(
+                    [
+                        ft.Container(
+                            width=48,
+                            height=48,
+                            border_radius=24,
+                            bgcolor="#B8FFC1" if not is_dark else "#166534",
+                            alignment=ft.alignment.center,
+                            content=ft.Icon(ft.Icons.CHECK, color="#22C55E", size=30),
+                        ),
+                        ft.Container(width=14),
+                        ft.Text(text, size=16, weight="bold", color=muted, expand=True),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+
+        def _procedure_row(idx, step):
+            if " - " in step:
+                prefix, body = step.split(" - ", 1)
+            elif ":" in step:
+                prefix, body = step.split(":", 1)
+                prefix = f"{prefix}:"
+            else:
+                prefix, body = f"Paso {idx}:", step
+            return ft.Container(
+                height=56,
+                padding=ft.padding.symmetric(horizontal=16),
+                border_radius=10,
+                bgcolor=card_bg,
+                border=ft.border.all(1, "#9CA3AF" if not is_dark else "#475569"),
+                content=ft.Row(
+                    [
+                        ft.Container(
+                            width=46,
                             height=46,
-                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-                            on_click=_back,
+                            border_radius=23,
+                            bgcolor="#0A469D",
+                            alignment=ft.alignment.center,
+                            content=ft.Text(str(idx), color="white", size=22, weight="bold"),
+                        ),
+                        ft.Container(width=16),
+                        ft.Text(prefix, size=15, color=colors["text"], weight="bold"),
+                        ft.Text(body.strip(), size=15, color=muted, weight="bold", expand=True),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+
+        if is_pomodoro:
+            hero_card = ft.Container(
+                padding=ft.padding.symmetric(horizontal=42, vertical=48),
+                bgcolor=card_bg,
+                border_radius=22,
+                border=ft.border.all(1, border_color),
+                content=ft.Row(
+                    [
+                        ft.Row(
+                            [
+                                ft.Container(
+                                    width=190,
+                                    height=190,
+                                    border_radius=14,
+                                    bgcolor="#EBFFED" if not is_dark else "#12351E",
+                                    alignment=ft.alignment.center,
+                                    content=ft.Icon(ft.Icons.ACCESS_TIME, size=150, color="#000000" if not is_dark else "#F8FAFC"),
+                                ),
+                                ft.Container(width=28),
+                                ft.Column(
+                                    [
+                                        ft.Text(title, size=44, weight="bold", color=colors["text"]),
+                                        ft.Container(height=18),
+                                        ft.Text(info["subtitle"], size=15, color=colors["text"], width=520),
+                                        ft.Container(height=34),
+                                        ft.Container(
+                                            padding=ft.padding.symmetric(horizontal=12, vertical=7),
+                                            border_radius=7,
+                                            bgcolor="#CAFFD2" if not is_dark else "#14532D",
+                                            content=ft.Row(
+                                                [
+                                                    ft.Icon(ft.Icons.AUTO_AWESOME, color="#57E249", size=22),
+                                                    ft.Text(info["bullets"][1], size=14, color="#16A34A", weight="w600"),
+                                                ],
+                                                spacing=8,
+                                            ),
+                                        ),
+                                        ft.Container(height=18),
+                                        ft.ElevatedButton(
+                                            f"{self.translate('tech_apply')}  →",
+                                            bgcolor="#57E249",
+                                            color="white",
+                                            height=52,
+                                            width=260,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.RoundedRectangleBorder(radius=14),
+                                                text_style=ft.TextStyle(size=18, weight="bold"),
+                                            ),
+                                            on_click=_apply_technique,
+                                        ),
+                                    ],
+                                    spacing=0,
+                                    expand=True,
+                                ),
+                            ],
+                            expand=True,
+                        ),
+                        ft.VerticalDivider(width=34, color=border_color),
+                        ft.Row(
+                            [
+                                ft.Container(width=64, height=64, border_radius=8, bgcolor="#EDFDF0" if not is_dark else "#12351E"),
+                                ft.Container(width=14),
+                                ft.Column(
+                                    [
+                                        ft.Text(self.translate("tech_what_is"), size=16, weight="bold", color=colors["text"]),
+                                        ft.Text(info["what_is"], size=14, color=colors["text"], width=470),
+                                    ],
+                                    spacing=8,
+                                    expand=True,
+                                ),
+                            ],
+                            expand=True,
+                            vertical_alignment=ft.CrossAxisAlignment.START,
+                        ),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+
+            how_card = ft.Container(
+                expand=2,
+                padding=ft.padding.all(34),
+                bgcolor=card_bg,
+                border_radius=14,
+                border=ft.border.all(1, border_color),
+                content=ft.Column(
+                    [
+                        ft.Text(self.translate("tech_how_used"), size=30, weight="bold", color=colors["text"]),
+                        ft.Container(height=24),
+                        ft.Row(
+                            [
+                                _step_icon(icon, index, heading, text)
+                                for index, (icon, heading, text) in enumerate(info["how_steps"], start=1)
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_AROUND,
+                        ),
+                    ],
+                    spacing=0,
+                ),
+            )
+
+            cycle_card = ft.Container(
+                expand=1,
+                padding=ft.padding.all(22),
+                bgcolor="#0A2348",
+                border_radius=14,
+                content=ft.Column(
+                    [
+                        ft.Text(self.translate("tech_pomodoro_cycle_title"), size=18, weight="bold", color="white", text_align=ft.TextAlign.CENTER),
+                        ft.Container(height=20),
+                        ft.Row(
+                            [
+                                ft.Text(self.translate("tech_pomodoro_cycle_left"), color="white", size=12, text_align=ft.TextAlign.CENTER),
+                                ft.Container(
+                                    width=190,
+                                    height=190,
+                                    border_radius=95,
+                                    bgcolor="#57E249",
+                                    alignment=ft.alignment.center,
+                                    content=ft.Container(
+                                        width=84,
+                                        height=84,
+                                        border_radius=42,
+                                        bgcolor="#0A2348",
+                                        alignment=ft.alignment.center,
+                                        content=ft.Icon(ft.Icons.AUTORENEW, color="white", size=44),
+                                    ),
+                                ),
+                                ft.Text(self.translate("tech_pomodoro_cycle_right"), color="white", size=12, text_align=ft.TextAlign.CENTER),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_AROUND,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        ),
+                        ft.Container(height=8),
+                        ft.Text(self.translate("tech_pomodoro_cycle_bottom"), color="#57E249", size=12, weight="bold", text_align=ft.TextAlign.CENTER),
+                    ],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+
+            bottom_bar = ft.Container(
+                padding=ft.padding.symmetric(horizontal=34, vertical=22),
+                bgcolor="#F3F6FC" if not is_dark else "#111827",
+                border_radius=12,
+                shadow=ft.BoxShadow(blur_radius=12, spread_radius=-4, color=ft.Colors.BLACK26),
+                content=ft.Row(
+                    [
+                        ft.IconButton(ft.Icons.PLAY_ARROW, icon_color="#57E249", icon_size=42),
+                        ft.Column(
+                            [
+                                ft.Text(self.translate("tech_video_title"), size=18, weight="bold", color=colors["text"]),
+                                ft.Text(self.translate("tech_video_subtitle"), size=16, color=colors["text"]),
+                            ],
+                            spacing=2,
                         ),
                         ft.Container(expand=True),
                         ft.ElevatedButton(
-                            "Aplicar técnica →",
-                            bgcolor="#08015C",
-                            color=ft.Colors.WHITE,
-                            width=220,
-                            height=46,
-                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                            f"{self.translate('tech_apply')}  →",
+                            bgcolor="#57E249",
+                            color="white",
+                            height=64,
+                            width=320,
+                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=16), text_style=ft.TextStyle(size=24, weight="bold")),
                             on_click=_apply_technique,
                         ),
-                    ]),
-                    ft.Container(height=30),
-                ], scroll=get_scroll_mode("AUTO"), expand=True, spacing=0)
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
             )
-        ], expand=True, spacing=0)
+
+            body = ft.Column(
+                [
+                    hero_card,
+                    ft.Container(height=24),
+                    ft.Row([how_card, ft.Container(width=20), cycle_card], vertical_alignment=ft.CrossAxisAlignment.STRETCH),
+                    ft.Container(height=24),
+                    bottom_bar,
+                ],
+                scroll=get_scroll_mode("AUTO"),
+                expand=True,
+                spacing=0,
+            )
+        else:
+            benefits = info["bullets"][:3]
+            while len(benefits) < 3:
+                benefits.append("Mejora tu organización de estudio")
+
+            header = ft.Row(
+                [
+                    ft.Container(
+                        width=120,
+                        height=100,
+                        border_radius=14,
+                        bgcolor="#E5E7EB" if not is_dark else "#334155",
+                        alignment=ft.alignment.center,
+                        content=ft.Icon(info["icon"], size=72, color="#0A469D"),
+                    ),
+                    ft.Container(width=24),
+                    ft.Column(
+                        [
+                            ft.Text(title, size=44, weight="bold", color=colors["text"]),
+                            ft.Container(
+                                padding=ft.padding.symmetric(horizontal=14, vertical=8),
+                                border_radius=8,
+                                bgcolor="#F0F0F4" if not is_dark else "#1E293B",
+                                content=ft.Text(tech.get("categoria", "Recientes"), size=15, weight="bold", color="#5B4DFF"),
+                            ),
+                        ],
+                        spacing=12,
+                    ),
+                ],
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+
+            about_card = ft.Container(
+                expand=1,
+                bgcolor=card_bg,
+                border_radius=14,
+                border=ft.border.all(1, border_color),
+                content=ft.Column(
+                    [
+                        ft.Container(
+                            padding=ft.padding.all(24),
+                            content=ft.Column(
+                                [
+                                    ft.Text(self.translate("tech_what_is"), size=22, weight="bold", color=colors["text"]),
+                                    ft.Container(height=28),
+                                    ft.Text(info["what_is"], size=15, weight="bold", color=muted),
+                                ],
+                                spacing=0,
+                            ),
+                        ),
+                        ft.Divider(height=1, color=border_color),
+                        ft.Container(
+                            padding=ft.padding.all(24),
+                            content=ft.Column(
+                                [
+                                    ft.Text(self.translate("tech_key_benefits"), size=22, weight="bold", color=colors["text"]),
+                                    ft.Container(height=22),
+                                    ft.Column([_benefit_card(b) for b in benefits], spacing=24),
+                                ],
+                                spacing=0,
+                            ),
+                        ),
+                    ],
+                    spacing=0,
+                ),
+            )
+
+            procedure_card = ft.Container(
+                expand=1.4,
+                bgcolor=card_bg,
+                border_radius=14,
+                border=ft.border.all(1, border_color),
+                content=ft.Column(
+                    [
+                        ft.Container(
+                            padding=ft.padding.symmetric(horizontal=24, vertical=22),
+                            content=ft.Column(
+                                [
+                                    ft.Text(self.translate("tech_step_procedure"), size=22, weight="bold", color=colors["text"]),
+                                    ft.Text(self.translate("tech_step_subtitle"), size=15, weight="bold", color=muted),
+                                ],
+                                spacing=2,
+                            ),
+                        ),
+                        ft.Divider(height=1, color=border_color),
+                        ft.Container(
+                            padding=ft.padding.all(24),
+                            content=ft.Column([_procedure_row(i, step) for i, step in enumerate(info["steps"], start=1)], spacing=26),
+                        ),
+                    ],
+                    spacing=0,
+                ),
+            )
+
+            body = ft.Column(
+                [
+                    ft.GestureDetector(
+                        on_tap=_back,
+                        content=ft.Row(
+                            [
+                                ft.Icon(ft.Icons.ARROW_BACK, size=24, color="#0A2348" if not is_dark else "#F8FAFC"),
+                                ft.Text(self.translate("tech_back_catalog"), size=24, weight="bold", color="#0A2348" if not is_dark else "#F8FAFC"),
+                            ],
+                            spacing=8,
+                        ),
+                    ),
+                    ft.Container(height=32),
+                    header,
+                    ft.Container(height=30),
+                    ft.Row([about_card, ft.Container(width=28), procedure_card], vertical_alignment=ft.CrossAxisAlignment.START),
+                    ft.Container(height=26),
+                    ft.Row(
+                        [
+                            ft.OutlinedButton(f"←  {self.translate('tech_back')}", width=150, height=44, on_click=_back),
+                            ft.Container(expand=True),
+                            ft.ElevatedButton(
+                                f"{self.translate('tech_apply')}  →",
+                                bgcolor="#0A469D",
+                                color="white",
+                                width=260,
+                                height=48,
+                                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8), text_style=ft.TextStyle(size=16, weight="bold")),
+                                on_click=_apply_technique,
+                            ),
+                        ]
+                    ),
+                ],
+                scroll=get_scroll_mode("AUTO"),
+                expand=True,
+                spacing=0,
+            )
+
+        detail_content = ft.Column(
+            [
+                navbar,
+                ft.Container(
+                    expand=True,
+                    bgcolor=page_bg,
+                    padding=ft.padding.symmetric(horizontal=46, vertical=34),
+                    content=body,
+                ),
+            ],
+            expand=True,
+            spacing=0,
+        )
 
         self._render_view(detail_content)
 
@@ -570,12 +915,13 @@ class StudyMethodsPage(BasePage):
         except: pass
 
     def _build_step_row_control(self, step: dict) -> ft.Control:
+        colors = self._get_theme_colors()
         def _on_change(e): step["completed"] = e.control.value
         return ft.Row([
             ft.Checkbox(value=step["completed"], on_change=_on_change, active_color="#16A34A"),
             ft.Column([
-                ft.Text(step["title"], size=14, weight="bold", color="#0F172A"),
-                ft.Text(step["desc"], size=11, color="#64748B"),
+                ft.Text(step["title"], size=14, weight="bold", color=colors["text"]),
+                ft.Text(step["desc"], size=11, color=colors["text_secondary"]),
             ], spacing=2, expand=True),
         ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
@@ -897,9 +1243,9 @@ class StudyMethodsPage(BasePage):
                     ),
                     ft.Container(height=14),
                     ft.Row([
-                        ft.ElevatedButton("← Anterior", bgcolor="#E2E8F0", color="#0F172A", on_click=_prev_card),
+                        ft.ElevatedButton("← Anterior", bgcolor=colors["background"], color=colors["text"], on_click=_prev_card),
                         ft.ElevatedButton("🔄 Voltear Tarjeta", bgcolor="#0284C7", color="white", on_click=_toggle_flip),
-                        ft.ElevatedButton("Siguiente →", bgcolor="#E2E8F0", color="#0F172A", on_click=_next_card),
+                        ft.ElevatedButton("Siguiente →", bgcolor=colors["background"], color=colors["text"], on_click=_next_card),
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ], spacing=0)
             )
@@ -934,8 +1280,8 @@ class StudyMethodsPage(BasePage):
                                 ),
                                 # Título y subtítulo
                                 ft.Column([
-                                    ft.Text(title, size=14, weight="bold", color="#0F172A"),
-                                    ft.Text(subtitle, size=11, color="#64748B")
+                                    ft.Text(title, size=14, weight="bold", color=colors["text"]),
+                                    ft.Text(subtitle, size=11, color=colors["text_secondary"])
                                 ], spacing=1, expand=True),
                                 # Campo de texto de respuesta
                                 ft.TextField(
@@ -962,13 +1308,13 @@ class StudyMethodsPage(BasePage):
 
             sub_header = ft.Row([
                 ft.Container(
-                    width=36, height=36, border_radius=10, bgcolor="#F1F5F9",
+                    width=36, height=36, border_radius=10, bgcolor=colors["background"],
                     alignment=ft.alignment.center,
-                    content=ft.Icon(ft.Icons.TRACK_CHANGES, color="#0F172A", size=20)
+                    content=ft.Icon(ft.Icons.TRACK_CHANGES, color=colors["text"], size=20)
                 ),
                 ft.Column([
-                    ft.Text("Planificador de Objetivos SMART", size=15, weight="bold", color="#0F172A"),
-                    ft.Text("Formula tu meta de estudio de forma rigurosa completando cada criterio.", size=11, color="#64748B")
+                    ft.Text("Planificador de Objetivos SMART", size=15, weight="bold", color=colors["text"]),
+                    ft.Text("Formula tu meta de estudio de forma rigurosa completando cada criterio.", size=11, color=colors["text_secondary"])
                 ], spacing=1)
             ], spacing=10)
 
@@ -1107,18 +1453,18 @@ class StudyMethodsPage(BasePage):
                     ]),
                     ft.Container(height=14),
                     ft.Container(
-                        width=180, height=180, border_radius=90, bgcolor="#F8FAFC", border=ft.border.all(6, "#16A34A"),
+                        width=180, height=180, border_radius=90, bgcolor=colors["background"], border=ft.border.all(6, "#16A34A"),
                         alignment=ft.alignment.center,
                         content=ft.Column([
-                            ft.Text(ref=self._timer_display, value="25:00", size=42, weight="bold", color="#0F172A"),
-                            ft.Text("Enfoque", size=12, color="#64748B"),
+                            ft.Text(ref=self._timer_display, value="25:00", size=42, weight="bold", color=colors["text"]),
+                            ft.Text("Enfoque", size=12, color=colors["text_secondary"]),
                         ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                     ),
                     ft.Container(height=16),
                     ft.Row([
                         ft.ElevatedButton(ref=self._start_btn, text="Iniciar", bgcolor="#16A34A", color="white", expand=True, on_click=self._start_timer),
-                        ft.ElevatedButton(ref=self._pause_btn, text="Pausar", bgcolor="#F1F5F9", color="#0F172A", expand=True, on_click=self._pause_timer),
-                        ft.ElevatedButton(ref=self._reset_btn, text="Reiniciar", bgcolor="#F1F5F9", color="#0F172A", expand=True, on_click=self._reset_timer),
+                        ft.ElevatedButton(ref=self._pause_btn, text="Pausar", bgcolor=colors["background"], color=colors["text"], expand=True, on_click=self._pause_timer),
+                        ft.ElevatedButton(ref=self._reset_btn, text="Reiniciar", bgcolor=colors["background"], color=colors["text"], expand=True, on_click=self._reset_timer),
                     ], spacing=8)
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
             )
@@ -1159,12 +1505,12 @@ class StudyMethodsPage(BasePage):
 
         header_section = ft.Row([
             ft.Container(
-                width=64, height=64, border_radius=16, bgcolor="#F1F5F9",
+                width=64, height=64, border_radius=16, bgcolor=colors["background"],
                 alignment=ft.alignment.center,
                 content=ft.Icon(ft.Icons.ASSIGNMENT_TURNED_IN_OUTLINED, color="#1E3A8A", size=32)
             ),
             ft.Column([
-                ft.Text(f"Fase 3: Aplicación Práctica de {title}", size=24, weight="bold", color="#0F172A"),
+                ft.Text(f"Fase 3: Aplicación Práctica de {title}", size=24, weight="bold", color=colors["text"]),
                 ft.Text("Utiliza esta herramienta interactiva durante tu sesión de estudio.", size=13, color=colors["text_secondary"]),
             ], spacing=2, expand=True),
             ft.Container(width=340, content=advice_box)
@@ -1230,15 +1576,15 @@ class StudyMethodsPage(BasePage):
         hero = ft.Container(
             bgcolor=colors["surface"],
             padding=ft.padding.symmetric(horizontal=36, vertical=24),
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             border_radius=20,
             content=ft.Row([
                 ft.Column([
-                    ft.Text("Técnicas de estudio", size=32, weight="bold", color="#0F172A"),
+                    ft.Text(self.translate("techniques_title"), size=32, weight="bold", color=colors["text"]),
                     ft.Container(height=4),
                     ft.Text(
-                        "Explora métodos interactivos para acelerar tu aprendizaje y dominar cualquier materia.",
-                        size=14, color="#64748B", max_lines=2
+                        self.translate("techniques_subtitle"),
+                        size=14, color=colors["text_secondary"], max_lines=2
                     ),
                 ], expand=True, spacing=0),
                 ft.Image(
@@ -1251,13 +1597,14 @@ class StudyMethodsPage(BasePage):
         )
 
         search_field = ft.TextField(
-            hint_text="Buscar técnicas...",
+            hint_text=self.translate("techniques_search"),
             prefix_icon=ft.Icons.SEARCH,
             width=320,
             height=44,
             border_radius=10,
-            bgcolor=ft.Colors.WHITE,
-            border_color="#E2E8F0",
+            bgcolor=colors["surface"],
+            color=colors["text"],
+            border_color=colors["border"],
             content_padding=ft.padding.symmetric(horizontal=12, vertical=8),
             on_change=self._on_search_change,
         )

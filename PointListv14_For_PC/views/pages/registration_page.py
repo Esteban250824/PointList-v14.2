@@ -21,7 +21,7 @@ class RegistrationPage(BasePage):
         self._refresh_field_theme()
 
         self.terms_checkbox = ft.Checkbox(
-            label="Acepto los Términos de servicio y la política de privacidad", 
+            label=self.translate("auth_terms"),
             value=False, 
             scale=1.0
         )
@@ -48,7 +48,7 @@ class RegistrationPage(BasePage):
         border_color = "#475569" if is_dark else "#D1D5DB"
 
         self.name_field = ft.TextField(
-            hint_text="Ingresa tu nombre completo",
+            hint_text=self.translate("auth_full_name_hint"),
             prefix_icon=ft.Icons.PERSON,
             expand=True,
             border_radius=10,
@@ -62,7 +62,7 @@ class RegistrationPage(BasePage):
         )
 
         self.email_field = ft.TextField(
-            hint_text="Ingresa tu correo electrónico",
+            hint_text=self.translate("auth_email_hint"),
             prefix_icon=ft.Icons.PERSON,  # Como en Figma: ícono de persona para el correo
             expand=True,
             border_radius=10,
@@ -79,11 +79,11 @@ class RegistrationPage(BasePage):
         self.rol_dropdown = ft.Container(
             height=64,
             content=ft.Dropdown(
-                hint_text="Tipo de cuenta",
+                hint_text=self.translate("auth_account_type"),
                 prefix_icon=ft.Icons.SCHOOL,
                 options=[
-                    ft.dropdown.Option("estudiante", "Estudiante"),
-                    ft.dropdown.Option("profesor", "Profesor"),
+                    ft.dropdown.Option("estudiante", self.translate("auth_student")),
+                    ft.dropdown.Option("profesor", self.translate("auth_teacher")),
                 ],
                 value="estudiante",
                 expand=True,
@@ -98,7 +98,7 @@ class RegistrationPage(BasePage):
         )
 
         self.pw_field = ft.TextField(
-            hint_text="Ingresa tu contraseña",
+            hint_text=self.translate("auth_password_hint"),
             prefix_icon=ft.Icons.LOCK,
             password=True,
             can_reveal_password=True,
@@ -114,7 +114,7 @@ class RegistrationPage(BasePage):
         )
 
         self.confirm_pw_field = ft.TextField(
-            hint_text="Confirma tu contraseña",
+            hint_text=self.translate("auth_confirm_password_hint"),
             prefix_icon=ft.Icons.LOCK,
             password=True,
             can_reveal_password=True,
@@ -146,7 +146,7 @@ class RegistrationPage(BasePage):
         email = self.email_field.value.strip()
         if email:
             pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-            self.email_field.error_text = None if re.match(pattern, email) else "Formato de email inválido"
+            self.email_field.error_text = None if re.match(pattern, email) else self.translate("validation_invalid_email")
         else:
             self.email_field.error_text = None
         self.page.update()
@@ -166,31 +166,31 @@ class RegistrationPage(BasePage):
     def _validate_form(self) -> bool:
         valid = True
         if not self.name_field.value.strip():
-            self.name_field.error_text = "Nombre requerido"
+            self.name_field.error_text = self.translate("validation_name_required")
             valid = False
         else:
             self.name_field.error_text = None
 
         if not self.email_field.value.strip():
-            self.email_field.error_text = "Email requerido"
+            self.email_field.error_text = self.translate("validation_email_required")
             valid = False
         else:
             self.email_field.error_text = None
 
         if not self.pw_field.value:
-            self.pw_field.error_text = "Contraseña requerida"
+            self.pw_field.error_text = self.translate("validation_password_required")
             valid = False
         else:
             self.pw_field.error_text = None
 
         if self.pw_field.value != self.confirm_pw_field.value:
-            self.confirm_pw_field.error_text = "Las contraseñas no coinciden"
+            self.confirm_pw_field.error_text = self.translate("validation_password_mismatch")
             valid = False
         else:
             self.confirm_pw_field.error_text = None
 
         if not self.terms_checkbox.value:
-            self._show_error("Debes aceptar los términos y condiciones")
+            self._show_error(self.translate("validation_terms_required"))
             valid = False
 
         self.page.update()
@@ -502,36 +502,37 @@ class RegistrationPage(BasePage):
         title_color = colors["text"]
         subtitle_color = colors["text_secondary"]
         link_color = "#07547B" if not is_dark else "#818CF8"
+        self.terms_checkbox.label = self.translate("auth_terms")
 
         form_column = ft.Column([
-            ft.Text("Crear cuenta", size=34, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_register_title"), size=34, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=8),
-            ft.Text("Completa tus datos para registrarte en PointList.", size=16, color=subtitle_color),
+            ft.Text(self.translate("auth_register_subtitle"), size=16, color=subtitle_color),
             ft.Container(height=24),
             self.error_banner,
             
-            ft.Text("Nombre completo", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_full_name"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=8),
             self.name_field,
             ft.Container(height=16),
             
-            ft.Text("Correo electrónico", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_email"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=8),
             self.email_field,
             ft.Container(height=16),
 
-            ft.Text("Tipo de cuenta", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_account_type"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=8),
             self.rol_dropdown,
             ft.Container(height=16),
             
-            ft.Text("Contraseña", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_password"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=8),
             self.pw_field,
-            ft.Text("Mínimo 8 caracteres, con mayúscula, número y símbolo.", size=11, color=subtitle_color),
+            ft.Text(self.translate("auth_password_rules"), size=11, color=subtitle_color),
             ft.Container(height=16),
 
-            ft.Text("Confirmar contraseña", size=14, weight=ft.FontWeight.BOLD, color=title_color),
+            ft.Text(self.translate("auth_confirm_password"), size=14, weight=ft.FontWeight.BOLD, color=title_color),
             ft.Container(height=8),
             self.confirm_pw_field,
             ft.Container(height=16),
@@ -543,7 +544,7 @@ class RegistrationPage(BasePage):
             
             ft.ElevatedButton(
                 content=ft.Row([
-                    ft.Text("Iniciar Sesión", size=16, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                    ft.Text(self.translate("auth_register_button"), size=16, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
                     ft.Icon(ft.Icons.ARROW_FORWARD, color=ft.Colors.WHITE, size=18),
                 ], alignment=ft.MainAxisAlignment.CENTER, spacing=8),
                 on_click=self._register_user,
@@ -555,7 +556,7 @@ class RegistrationPage(BasePage):
             ft.Container(height=20),
             ft.Row([
                 ft.Container(expand=True, height=1, bgcolor="#E2E8F0"),
-                ft.Container(padding=ft.padding.symmetric(horizontal=12), content=ft.Text("o continua con", size=12, color=subtitle_color)),
+                ft.Container(padding=ft.padding.symmetric(horizontal=12), content=ft.Text(self.translate("auth_continue_with"), size=12, color=subtitle_color)),
                 ft.Container(expand=True, height=1, bgcolor="#E2E8F0"),
             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
             ft.Container(height=16),
@@ -566,10 +567,10 @@ class RegistrationPage(BasePage):
             ], alignment=ft.MainAxisAlignment.CENTER),
             ft.Container(height=20),
             ft.Row([
-                ft.Text("¿Ya tienes cuenta?", size=14, color=subtitle_color),
+                ft.Text(self.translate("auth_have_account"), size=14, color=subtitle_color),
                 ft.Container(width=8),
                 ft.TextButton(
-                    "Iniciar Sesión",
+                    self.translate("auth_login_button"),
                     on_click=lambda e: NavigationController.update_view("Login"),
                     style=ft.ButtonStyle(color="#FF4D6E", text_style=ft.TextStyle(size=14)),
                 ),

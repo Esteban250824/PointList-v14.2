@@ -153,7 +153,7 @@ class UserProfilePage(BasePage):
             shadow=ft.BoxShadow(blur_radius=12, spread_radius=-2, color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK)),
             content=ft.Row([
                 build_pill_tab("perfil", self.translate("profile_tab_perfil"), ft.Icons.PERSON_OUTLINE),
-                build_pill_tab("logros", "Logros & Insignias", ft.Icons.EMOJI_EVENTS_OUTLINED),
+                build_pill_tab("logros", self.translate("profile_tab_logros"), ft.Icons.EMOJI_EVENTS_OUTLINED),
                 build_pill_tab("seguridad", self.translate("profile_tab_seguridad"), ft.Icons.SHIELD_OUTLINED),
                 build_pill_tab("ajustes", self.translate("profile_tab_ajustes"), ft.Icons.SETTINGS_OUTLINED),
                 build_pill_tab("actividad", self.translate("profile_tab_actividad"), ft.Icons.ACCESS_TIME),
@@ -328,7 +328,8 @@ class UserProfilePage(BasePage):
         self.website_field.value = self._config.get("sitio_web", "https://pointlist.app")
 
         navbar = self._build_navbar(self.translate("nav_profile"))
-        member_since = f"Miembro desde {self._config.get('fecha_registro', 'marzo de 2026')}"
+        member_since_date = self._config.get("fecha_registro", "2026")
+        member_since = f"{self.translate('profile_member_since')} {member_since_date}"
 
         # Hero Banner
         hero = ft.Container(
@@ -368,7 +369,7 @@ class UserProfilePage(BasePage):
                     ft.Row([
                         ft.Text(display_name, size=28, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                         ft.Container(
-                            content=ft.Text("Estudiante Activo", size=11, color="#15803D", weight="bold"),
+                            content=ft.Text(self.translate("profile_active_student"), size=11, color="#15803D", weight="bold"),
                             bgcolor="#DCFCE7",
                             border_radius=12,
                             padding=ft.padding.symmetric(horizontal=10, vertical=4),
@@ -388,7 +389,7 @@ class UserProfilePage(BasePage):
             bgcolor=colors["surface"],
             border_radius=20,
             padding=30,
-            border=ft.border.all(1, "#E2E8F0"),
+            border=ft.border.all(1, colors["border"]),
             shadow=ft.BoxShadow(blur_radius=20, spread_radius=-4, color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK)),
             content=self.main_card_container,
         )
